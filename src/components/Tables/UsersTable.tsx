@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { User } from '../../types/common';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
-
+import { config } from '../../common/config';
 const UsersList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Define the API endpoint and options
-    const url = 'http://localhost:8080/users';
+    const url = `${config.apiBaseUrl}/users`;
+    console.log('asdasdasdasd', url);
     const options: RequestInit = {
       method: 'GET',
       headers: {
-        Authorization:
-          'Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbjIiLCJpYXQiOjE3MjM4MjYwMDYsImV4cCI6MTcyMzgyOTAwNn0.sXVu1kI75VFYTXHtVojAuXFLCpNrCnk3QWPLisd5f3gIE08H7QaGoyTiq0KSLZUv',
+        Authorization: `Bearer ${localStorage.getItem('token')}`, // Replace with actual token retrieval method
         'Content-Type': 'application/json',
       },
     };
@@ -46,7 +46,7 @@ const UsersList: React.FC = () => {
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="py-6 px-4 md:px-6 xl:px-7.5">
           <h4 className="text-xl font-semibold text-black dark:text-white">
-            Users List
+            Danh sách nhân viên
           </h4>
         </div>
 

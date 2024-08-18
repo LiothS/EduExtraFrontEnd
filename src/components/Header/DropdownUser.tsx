@@ -1,11 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ClickOutside from '../ClickOutside';
 import UserOne from '../../images/user/user-01.png';
-
+import axios from 'axios'; // Import axios or use fetch for API calls
+import { User } from '../../types/common'; // Import the User interface
+import { config } from '../../common/config';
+import { useAuth } from '../../context/AuthContext';
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null); // Use the User interface
 
+  useEffect(() => {
+    // Fetch user data when the component mounts
+    const fetchUserData = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          const response = await axios.get<User>(
+            `${config.apiBaseUrl}/users/${userId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`, // Replace with actual token retrieval method
+                'Content-Type': 'application/json',
+              },
+            },
+          );
+          setUser(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+  const { logout } = useAuth();
+  const handleLogout = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('authToken');
+    logout(); // Call the logout function from context
+  };
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
       <Link
@@ -15,9 +49,12 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-medium text-black dark:text-white">
-            Thomas Anree
+            {user ? user.fullName : 'N/A'}
           </span>
-          <span className="block text-xs">UX Designer</span>
+          <span className="block text-xs">
+            {''}
+            {/* Adjust roles rendering if needed */}
+          </span>
         </span>
 
         <span className="h-12 w-12 rounded-full">
@@ -49,7 +86,7 @@ const DropdownUser = () => {
           <ul className="flex flex-col gap-5 border-b border-stroke px-6 py-7.5 dark:border-strokedark">
             <li>
               <Link
-                to="/profile"
+                to={`/user-detail/${user.id}`}
                 className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
               >
                 <svg
@@ -69,7 +106,7 @@ const DropdownUser = () => {
                     fill=""
                   />
                 </svg>
-                My Profile
+                Thông tin cá nhân
               </Link>
             </li>
             <li>
@@ -90,10 +127,10 @@ const DropdownUser = () => {
                     fill=""
                   />
                 </svg>
-                My Contacts
+                Hợp đồng
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 to="/settings"
                 className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
@@ -115,11 +152,14 @@ const DropdownUser = () => {
                     fill=""
                   />
                 </svg>
-                Account Settings
+                Settings
               </Link>
-            </li>
+            </li> */}
           </ul>
-          <button className="flex items-center gap-3.5 px-6 py-4 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base">
+          <button
+            className="flex items-center gap-3.5 px-6 py-4 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
+            onClick={handleLogout}
+          >
             <svg
               className="fill-current"
               width="22"
@@ -141,7 +181,6 @@ const DropdownUser = () => {
           </button>
         </div>
       )}
-      {/* <!-- Dropdown End --> */}
     </ClickOutside>
   );
 };

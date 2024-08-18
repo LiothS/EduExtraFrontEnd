@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { User } from '../../types/common';
+import { config } from '../../common/config';
 
 const UserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -10,13 +11,11 @@ const UserDetail: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-
-    const url = `http://localhost:8080/users/${id}`;
+    const url = `${config.apiBaseUrl}/users/${id}`;
     const options: RequestInit = {
       method: 'GET',
       headers: {
-        Authorization:
-          'Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbjIiLCJpYXQiOjE3MjM4MjYwMDYsImV4cCI6MTcyMzgyOTAwNn0.sXVu1kI75VFYTXHtVojAuXFLCpNrCnk3QWPLisd5f3gIE08H7QaGoyTiq0KSLZUv',
+        Authorization: `Bearer ${localStorage.getItem('token')}`, // Replace with actual token retrieval method
         'Content-Type': 'application/json',
       },
     };

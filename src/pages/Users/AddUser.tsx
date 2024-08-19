@@ -87,33 +87,83 @@ const AddUser: React.FC = () => {
     e.preventDefault();
     if (validateForm()) {
       try {
-        const formData = new FormData();
-        formData.append('username', username);
-        formData.append('roles', JSON.stringify(roles));
-        formData.append('fullName', fullName);
-        formData.append('password', password);
-        formData.append('email', email);
-        formData.append('phone', phone);
-        formData.append('address', address);
-        formData.append('nickname', nickname);
-        formData.append('birthday', birthday || '');
-        formData.append('identityCard', identityCard);
-        if (profilePhoto) formData.append('image', profilePhoto);
-        formData.append('active', 'true'); // or set based on your needs
-
-        const response = await axios.post('http://localhost:8080/users', formData, {
-          headers: {
-            'Authorization': 'Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbjIiLCJpYXQiOjE3MjM4MjYwMDYsImV4cCI6MTcyMzgyOTAwNn0.sXVu1kI75VFYTXHtVojAuXFLCpNrCnk3QWPLisd5f3gIE08H7QaGoyTiq0KSLZUv',
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-
-        if (response.status === 200) {
-          console.log('Form submitted successfully', response.data);
-          // Clear form fields or redirect user
+        // Convert birthday from "dd/MM/yyyy" to "yyyy-MM-dd"
+        const convertDateFormat = (dateStr: string | undefined): string => {
+          if (!dateStr) return '';
+          
+          // Split the input date into parts
+          const [day, month, year] = dateStr.split('/').map(Number);
+          
+          // Create a new Date object in the format yyyy-MM-dd
+          const formattedDate = new Date(year, month - 1, day);
+          
+          // Convert to yyyy-MM-dd format
+          return formattedDate.toISOString().split('T')[0];
+        };
+        const token = localStorage.getItem('token');
+        const formattedBirthday = convertDateFormat(birthday);
+  
+        // Create the JSON payload
+        const payload = {
+          username,
+          roles,
+          fullName,
+          password,
+          email,
+          phone,
+          address,
+          nickname,
+          birthday: formattedBirthday, // Use ISO formatted date
+          identityCard,
+          active: true, // or set based on your needs
+        };
+  
+        // If profile photo is provided, convert it to base64
+        let profilePhotoBase64 = '';
+        if (profilePhoto) {
+          const reader = new FileReader();
+          reader.readAsDataURL(profilePhoto);
+          reader.onloadend = async () => {
+            profilePhotoBase64 = reader.result as string;
+  
+            try {
+              const response = await axios.post('http://localhost:8080/users', {
+                ...payload,
+                profilePhoto: profilePhotoBase64, // Add base64 image to the payload
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+  
+              if (response.status === 200) {
+                console.log('Form submitted successfully', response.data);
+                // Clear form fields or redirect user
+              } else {
+                console.error('Failed to submit form', response.data);
+                setErrorMessage(response.data.message || 'An error occurred');
+              }
+            } catch (error: any) {
+              console.error('Error submitting form', error);
+              setErrorMessage(error.response?.data?.message || 'An unexpected error occurred');
+            }
+          };
         } else {
-          console.error('Failed to submit form', response.data);
-          setErrorMessage(response.data.message || 'An error occurred');
+          const response = await axios.post('http://localhost:8080/users', payload, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+  
+          if (response.status === 200) {
+            console.log('Form submitted successfully', response.data);
+            // Clear form fields or redirect user
+          } else {
+            console.error('Failed to submit form', response.data);
+            setErrorMessage(response.data.message || 'An error occurred');
+          }
         }
       } catch (error: any) {
         console.error('Error submitting form', error);
@@ -121,7 +171,7 @@ const AddUser: React.FC = () => {
       }
     }
   };
-
+  
   return (
     <>
       <div className="mx-auto max-w-270">

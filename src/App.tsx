@@ -18,6 +18,7 @@ import Buttons from './pages/UiElements/Buttons';
 import DefaultLayout from './layout/DefaultLayout';
 import UserDetail from './pages/Users/UserDetail';
 import { useEffect, useState } from 'react';
+import AddUser from './pages/Users/AddUser';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -47,6 +48,7 @@ function App() {
                 </>
               }
             />
+            <Route path="/add-user" element={<AddUser />} />
             <Route
               index
               element={

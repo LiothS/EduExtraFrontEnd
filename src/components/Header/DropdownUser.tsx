@@ -8,7 +8,7 @@ import { config } from '../../common/config';
 import { useAuth } from '../../context/AuthContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/UserStore';
-import { setUser } from '../../redux/UserSlice';
+import { clearUser, setUser } from '../../redux/UserSlice';
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -40,6 +40,7 @@ const DropdownUser = () => {
   }, [dispatch]);
   const { logout } = useAuth();
   const handleLogout = () => {
+    dispatch(clearUser());
     localStorage.removeItem('userId');
     localStorage.removeItem('authToken');
     logout(); // Call the logout function from context

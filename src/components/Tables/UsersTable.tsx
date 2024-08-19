@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { User } from '../../types/common';
 import { useNavigate } from 'react-router-dom';
 import { config } from '../../common/config';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/UserStore';
 
 const UsersList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -17,7 +19,13 @@ const UsersList: React.FC = () => {
     filter: string;
   } | null>(null); // Store search params
   const navigate = useNavigate();
+  const user = useSelector((state: RootState) => state.user.user);
 
+const hasRole = (user: User, roleName: string): boolean => {
+  return user.roles.some(role => role.roleName === roleName);
+};
+
+const isAdmin = user ? hasRole(user, "ADMIN") : false;
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -73,6 +81,10 @@ const UsersList: React.FC = () => {
       handleSearch();
     }
   };
+  const handleAddUser = () => {
+    // Navigate to add user page or perform any other action
+    navigate('/add-user');
+  };
   return (
     <>
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -113,6 +125,14 @@ const UsersList: React.FC = () => {
             >
               Search
             </button>
+            {isAdmin && (
+              <button
+                onClick={handleAddUser}
+                className="bg-primary text-white rounded-md py-2 px-4 hover:bg-primary-dark focus:outline-none"
+              >
+                Add User
+              </button>
+            )}
           </div>
         </div>
 

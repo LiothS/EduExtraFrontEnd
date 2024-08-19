@@ -6,10 +6,14 @@ import axios from 'axios'; // Import axios or use fetch for API calls
 import { User } from '../../types/common'; // Import the User interface
 import { config } from '../../common/config';
 import { useAuth } from '../../context/AuthContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../redux/UserStore';
+import { setUser } from '../../redux/UserSlice';
+
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null); // Use the User interface
-
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.user.user);
   useEffect(() => {
     // Fetch user data when the component mounts
     const fetchUserData = async () => {
@@ -25,7 +29,7 @@ const DropdownUser = () => {
               },
             },
           );
-          setUser(response.data);
+          dispatch(setUser(response.data));
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -33,7 +37,7 @@ const DropdownUser = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [dispatch]);
   const { logout } = useAuth();
   const handleLogout = () => {
     localStorage.removeItem('userId');

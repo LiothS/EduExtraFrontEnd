@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Import axios for HTTP requests
+import axios from 'axios';
 import Breadcrumb from '../../components/Breadcrumbs/Breadcrumb';
 import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css'; // Import Flatpickr CSS
+import 'flatpickr/dist/flatpickr.min.css';
 import { registerPlugin } from 'react-filepond';
 import 'filepond/dist/filepond.min.css';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
 import FilePondPluginFileEncode from 'filepond-plugin-file-encode';
+import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 registerPlugin(FilePondPluginFileValidateType, FilePondPluginFileEncode);
 
@@ -15,7 +18,6 @@ const rolesList = ['MANAGER', 'ADMIN', 'ACCOUNTANT', 'TEACHER'];
 const AddUser: React.FC = () => {
   const [birthday, setBirthday] = useState<string | undefined>(undefined);
   const [roles, setRoles] = useState<string[]>([]);
-  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
@@ -28,6 +30,7 @@ const AddUser: React.FC = () => {
   const [identityCard, setIdentityCard] = useState<string>('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     flatpickr("#birthday", {
@@ -40,34 +43,13 @@ const AddUser: React.FC = () => {
     });
   }, []);
 
-  const handleRoleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedRole(event.target.value);
-  };
-
-  const handleAddRole = () => {
-    if (selectedRole && !roles.includes(selectedRole)) {
-      setRoles([...roles, selectedRole]);
-      setSelectedRole('');
+  const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const role = event.target.value;
+    if (event.target.checked) {
+      setRoles([...roles, role]);
+    } else {
+      setRoles(roles.filter(r => r !== role));
     }
-  };
-
-  const handleRemoveRole = (roleToRemove: string) => {
-    setRoles(roles.filter(role => role !== roleToRemove));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.length) {
-      const file = e.target.files[0];
-      if (file.type === 'image/jpeg' || file.type === 'image/png') {
-        setProfilePhoto(file);
-      } else {
-        alert('Please select a JPG or PNG image.');
-      }
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    setProfilePhoto(null);
   };
 
   const validateForm = () => {
@@ -87,23 +69,16 @@ const AddUser: React.FC = () => {
     e.preventDefault();
     if (validateForm()) {
       try {
-        // Convert birthday from "dd/MM/yyyy" to "yyyy-MM-dd"
         const convertDateFormat = (dateStr: string | undefined): string => {
           if (!dateStr) return '';
-          
-          // Split the input date into parts
           const [day, month, year] = dateStr.split('/').map(Number);
-          
-          // Create a new Date object in the format yyyy-MM-dd
           const formattedDate = new Date(year, month - 1, day);
-          
-          // Convert to yyyy-MM-dd format
           return formattedDate.toISOString().split('T')[0];
         };
-        const token = localStorage.getItem('token');
+
+        const token = sessionStorage.getItem('token');
         const formattedBirthday = convertDateFormat(birthday);
-  
-        // Create the JSON payload
+
         const payload = {
           username,
           roles,
@@ -113,57 +88,26 @@ const AddUser: React.FC = () => {
           phone,
           address,
           nickname,
-          birthday: formattedBirthday, // Use ISO formatted date
+          birthday: formattedBirthday,
           identityCard,
-          active: true, // or set based on your needs
+          active: true,
         };
-  
-        // If profile photo is provided, convert it to base64
-        let profilePhotoBase64 = '';
-        if (profilePhoto) {
-          const reader = new FileReader();
-          reader.readAsDataURL(profilePhoto);
-          reader.onloadend = async () => {
-            profilePhotoBase64 = reader.result as string;
-  
-            try {
-              const response = await axios.post('http://localhost:8080/users', {
-                ...payload,
-                profilePhoto: profilePhotoBase64, // Add base64 image to the payload
-              }, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-              });
-  
-              if (response.status === 200) {
-                console.log('Form submitted successfully', response.data);
-                // Clear form fields or redirect user
-              } else {
-                console.error('Failed to submit form', response.data);
-                setErrorMessage(response.data.message || 'An error occurred');
-              }
-            } catch (error: any) {
-              console.error('Error submitting form', error);
-              setErrorMessage(error.response?.data?.message || 'An unexpected error occurred');
-            }
-          };
+
+        const response = await axios.post('http://localhost:8080/users', payload, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.status === 200) {
+          toast.success('User added successfully');
+          setTimeout(() => {
+            navigate(-1); // Navigate back to the previous page
+          }, 2000); // Delay to allow user to see the success message
         } else {
-          const response = await axios.post('http://localhost:8080/users', payload, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-  
-          if (response.status === 200) {
-            console.log('Form submitted successfully', response.data);
-            // Clear form fields or redirect user
-          } else {
-            console.error('Failed to submit form', response.data);
-            setErrorMessage(response.data.message || 'An error occurred');
-          }
+          console.error('Failed to submit form', response.data);
+          setErrorMessage(response.data.message || 'An error occurred');
         }
       } catch (error: any) {
         console.error('Error submitting form', error);
@@ -171,13 +115,14 @@ const AddUser: React.FC = () => {
       }
     }
   };
-  
+
   return (
     <>
       <div className="mx-auto max-w-270">
         <Breadcrumb pageName="Add User" />
-        <div className="grid grid-cols-5 gap-8">
-          <div className="col-span-5 xl:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Form Fields Section */}
+          <div className="lg:col-span-2">
             <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
                 <h3 className="font-medium text-black dark:text-white">User Details</h3>
@@ -253,30 +198,30 @@ const AddUser: React.FC = () => {
                         className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                         type="text"
                         id="nickname"
-                        placeholder="Johnny"
+                        placeholder="Johnnie"
                         value={nickname}
                         onChange={(e) => setNickname(e.target.value)}
                       />
                     </div>
                   </div>
 
-                  {/* Phone Number Field */}
+                  {/* Phone Field */}
                   <div className="mb-5.5">
                     <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="phone">
                       Phone Number
                     </label>
                     <input
                       className={`w-full rounded border ${errors.phone ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
-                      type="text"
+                      type="tel"
                       id="phone"
-                      placeholder="+123 456 7890"
+                      placeholder="+1234567890"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
                     {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
                   </div>
 
-                  {/* Email Address Field */}
+                  {/* Email Field */}
                   <div className="mb-5.5">
                     <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="email">
                       Email Address
@@ -285,11 +230,27 @@ const AddUser: React.FC = () => {
                       className={`w-full rounded border ${errors.email ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="email"
                       id="email"
-                      placeholder="example@example.com"
+                      placeholder="john.doe@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
                     {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+                  </div>
+
+                  {/* Address Field */}
+                  <div className="mb-5.5">
+                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="address">
+                      Address
+                    </label>
+                    <input
+                      className={`w-full rounded border ${errors.address ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      type="text"
+                      id="address"
+                      placeholder="123 Main St"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                    {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
                   </div>
 
                   {/* Identity Card Field */}
@@ -301,7 +262,7 @@ const AddUser: React.FC = () => {
                       className={`w-full rounded border ${errors.identityCard ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="text"
                       id="identityCard"
-                      placeholder="ID123456789"
+                      placeholder="ID12345678"
                       value={identityCard}
                       onChange={(e) => setIdentityCard(e.target.value)}
                     />
@@ -309,152 +270,63 @@ const AddUser: React.FC = () => {
                   </div>
 
                   {/* Birthday Field */}
-                  <div className="mb-5.5 relative">
+                  <div className="mb-5.5">
                     <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="birthday">
                       Birthday
                     </label>
                     <input
-                      id="birthday"
-                      className="w-full rounded border border-stroke bg-transparent px-5 py-3 text-black focus:border-primary dark:border-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                      placeholder="dd/mm/yyyy"
-                      value={birthday || ''}
-                      readOnly
-                    />
-                  </div>
-
-                  {/* Address Field */}
-                  <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="address">
-                      Address
-                    </label>
-                    <input
                       className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                       type="text"
-                      id="address"
-                      placeholder="123 Main St, City, Country"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
+                      id="birthday"
+                      placeholder="Select date"
+                      value={birthday}
+                      readOnly
                     />
-                    {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
-                  </div>
-
-                  {/* Roles Section */}
-                  <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                      Roles
-                    </label>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {roles.map((role, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1 border border-blue-300"
-                        >
-                          <span>{role}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveRole(role)}
-                            className="ml-2 text-red-500 hover:text-red-700"
-                          >
-                            &times;
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={selectedRole}
-                        onChange={handleRoleChange}
-                        className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
-                      >
-                        <option value="">Select a role</option>
-                        {rolesList.map((role, index) => (
-                          <option key={index} value={role}>
-                            {role}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={handleAddRole}
-                        className="ml-2 px-3 py-1 bg-primary text-white text-sm rounded shadow-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                      >
-                        Add Role
-                      </button>
-                    </div>
                   </div>
 
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    className="mt-4 px-6 py-2 bg-primary text-white rounded"
+                    className="inline-flex h-11 items-center justify-center rounded bg-primary px-5 text-base font-medium text-white transition duration-150 hover:bg-primaryfocus:outline-none dark:bg-primarydark dark:hover:bg-primarydark"
                   >
-                    Save User
+                    Add User
                   </button>
                 </form>
-                {errorMessage && (
-                  <div className="mt-4 p-4 bg-red-100 text-red-800 border border-red-200 rounded">
-                    {errorMessage}
-                  </div>
-                )}
+                {errorMessage && <p className="text-red-500 mt-4 text-sm">{errorMessage}</p>}
               </div>
             </div>
           </div>
 
-          {/* Profile Photo Section */}
-          <div className="col-span-5 xl:col-span-2">
-            <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          {/* Roles Section */}
+          <div className="lg:col-span-1">
+            <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
-                <h3 className="font-medium text-black dark:text-white">Your Photo</h3>
+                <h3 className="font-medium text-black dark:text-white">User Roles</h3>
               </div>
               <div className="p-7">
-                <div className="flex flex-col items-center">
-                  <div className="relative h-24 w-24 rounded-full overflow-hidden bg-gray-200">
-                    {profilePhoto ? (
-                      <img
-                        src={URL.createObjectURL(profilePhoto)}
-                        alt="Profile"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full w-full text-gray-500">
-                        No Photo
-                      </div>
-                    )}
-                    {profilePhoto && (
-                      <button
-                        type="button"
-                        onClick={handleRemovePhoto}
-                        className="absolute top-0 right-0 p-1 bg-red-600 text-white rounded-full"
-                      >
-                        &times;
-                      </button>
-                    )}
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <label className="cursor-pointer bg-primary text-white rounded px-4 py-2">
-                      Choose File
-                      <input
-                        type="file"
-                        accept="image/jpeg, image/png"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
+                <label className="mb-3 block text-sm font-medium text-black dark:text-white">
+                  Roles
+                </label>
+                {rolesList.map((role) => (
+                  <div key={role} className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      id={`role-${role}`}
+                      value={role}
+                      checked={roles.includes(role)}
+                      onChange={handleRoleChange}
+                    />
+                    <label className="ml-2" htmlFor={`role-${role}`}>
+                      {role}
                     </label>
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      className={`px-4 py-2 rounded border ${profilePhoto ? 'border-red-600 text-red-600' : 'border-gray-300 text-gray-500'}`}
-                      disabled={!profilePhoto}
-                    >
-                      Remove
-                    </button>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </div>
+      <ToastContainer />
     </>
   );
 };

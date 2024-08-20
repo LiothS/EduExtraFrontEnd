@@ -1,48 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ClickOutside from '../ClickOutside';
 import UserOne from '../../images/user/user-01.png';
-import axios from 'axios'; // Import axios or use fetch for API calls
-import { User } from '../../types/common'; // Import the User interface
-import { config } from '../../common/config';
 import { useAuth } from '../../context/AuthContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/UserStore';
-import { clearUser, setUser } from '../../redux/UserSlice';
+import { clearUser } from '../../redux/UserSlice';
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dispatch = useDispatch();
-  const user = useSelector((state: RootState) => state.user.user);
-  useEffect(() => {
-    // Fetch user data when the component mounts
-    const fetchUserData = async () => {
-      try {
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-          const response = await axios.get<User>(
-            `${config.apiBaseUrl}/users/${userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`, // Replace with actual token retrieval method
-                'Content-Type': 'application/json',
-              },
-            },
-          );
-          dispatch(setUser(response.data));
-        }
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
-      }
-    };
-
-    fetchUserData();
-  }, [dispatch]);
+  const user = useSelector((state: RootState) => state.user.user); // Get user from Redux state
   const { logout } = useAuth();
   const handleLogout = () => {
     dispatch(clearUser());
-    localStorage.removeItem('userId');
-    localStorage.removeItem('authToken');
+    sessionStorage.clear();
     logout(); // Call the logout function from context
   };
   return (
@@ -91,7 +63,7 @@ const DropdownUser = () => {
           <ul className="flex flex-col gap-5 border-b border-stroke px-6 py-7.5 dark:border-strokedark">
             <li>
               <Link
-                to={`/user-detail/${user.id}`}
+                to={`/user-detail/${user?.id}`}
                 className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
               >
                 <svg

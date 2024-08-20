@@ -1,269 +1,396 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { User } from '../../types/common';
+import Breadcrumb from '../../components/Breadcrumbs/Breadcrumb';
+import defaultProfileImg from '../../images/user/user-03.png';
+import { User } from '../../types/common'; // Import User type
 import { config } from '../../common/config';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/UserStore';
+import { toast } from 'react-toastify';
+
+const contractsContent = <div>Contracts Content</div>;
+const accountContent = <div>Account Content</div>;
 
 const UserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [user, setUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState('userInfo');
+  const [apiUser, setApiUser] = useState<User | null>(null);
+  const [profileImage, setProfileImage] = useState<string>(defaultProfileImg);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('profile');
+  const [formData, setFormData] = useState<User | null>(null);
+
+  // Get the global user from Redux
+  const globalUser = useSelector((state: RootState) => state.user.user);
 
   useEffect(() => {
-    if (!id) return;
-    const url = `${config.apiBaseUrl}/users/${id}`;
-    const options: RequestInit = {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`, // Replace with actual token retrieval method
-        'Content-Type': 'application/json',
-      },
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${config.apiBaseUrl}/users/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`, // Replace with your token
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch user details');
+        }
+        const userData: User = await response.json();
+        setApiUser(userData);
+        setProfileImage(userData.image ? `${config.apiBaseUrl}/${userData.image}` : defaultProfileImg);
+        setFormData(userData);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetch(url, options)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then((data: User) => {
-        setUser(data);
-      })
-      .catch((error) => {
-        setError(error.message);
-        console.error('Fetch error:', error);
-      });
+    fetchUser();
   }, [id]);
 
-  if (error) return <p className="text-red-600">Error: {error}</p>;
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+        setImageFile(file);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleEditClick = () => {
-    // Handle edit button click (e.g., navigate to an edit page or open a modal)
-    console.log('Edit button clicked');
+  const handleRemoveImage = () => {
+    setProfileImage(apiUser?.image ? `${config.apiBaseUrl}/${apiUser.image}` : defaultProfileImg);
+    setImageFile(null);
   };
 
-  // Fake data for Contracts and Income
-  const contracts = [
-    {
-      id: 1,
-      title: 'Contract A',
-      startDate: '2023-01-01',
-      endDate: '2023-12-31',
-    },
-    {
-      id: 2,
-      title: 'Contract B',
-      startDate: '2023-06-01',
-      endDate: '2023-12-31',
-    },
-  ];
+  const handleSaveChanges = async () => {
+    if (imageFile) {
+      // Prepare FormData for image upload
+      const imageFormData = new FormData();
+      imageFormData.append('image', imageFile);
+  
+      try {
+        const imageResponse = await fetch(`${config.apiBaseUrl}/users/image/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+          },
+          body: imageFormData,
+        });
+  
+        if (!imageResponse.ok) {
+          throw new Error('Failed to update profile image');
+        }
+      } catch (error) {
+        toast.error('Không thay đổi được hình ảnh');
+        return;
+      }
+    }
+  
+    // Prepare JSON for user details update
+    const userDetails = {
+      username: formData?.username || apiUser?.username,
+    //  roles: Array.isArray(formData?.roles) ? formData.roles : apiUser?.roles || [], // Ensure roles is an array
+      fullName: formData?.fullName || apiUser?.fullName,
+      email: formData?.email || apiUser?.email,
+      phone: formData?.phone || apiUser?.phone,
+      address: formData?.address || apiUser?.address,
+      nickname: formData?.nickname || apiUser?.nickname,
+      birthday: formData?.birthday || apiUser?.birthday,
+      image: profileImage || apiUser?.image, // Ensure the image URL is set correctly
+      identityCard: formData?.identityCard || apiUser?.identityCard,
+      active: formData?.active !== undefined ? formData.active : apiUser?.active, // Ensure active field is set
+    };
+  
+    try {
+      const userResponse = await fetch(`${config.apiBaseUrl}/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userDetails),
+      });
+  
+      if (!userResponse.ok) {
+        throw new Error('Failed to update user details');
+      }
+  
+      const updatedUser: User = await userResponse.json();
+      setApiUser(updatedUser);
+      setFormData(updatedUser);
+      toast.success('Changes saved successfully');
+      // Optionally reload the user profile page
+      // window.location.reload();
+    } catch (error) {
+      toast.error('Cập nhật thất bại');
+    }
+  };
+  
 
-  const income = [
-    { month: 'January', amount: 5000 },
-    { month: 'February', amount: 4500 },
-    { month: 'March', amount: 4800 },
-  ];
+  const hasRole = (user: User, roleName: string): boolean => {
+    return user.roles.some(role => role.roleName === roleName);
+  };
+
+  // Check if the global user can edit
+  const isAdmin = globalUser && hasRole(globalUser, 'ADMIN');
+  const canEdit = apiUser && (isAdmin || globalUser.id === apiUser.id);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="container mx-auto p-6 bg-gray-100 rounded-lg shadow-md">
-      <ul className="flex flex-wrap text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:border-gray-700 dark:text-gray-400 mb-6">
-        <li className="me-2">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              handleTabChange('profile');
-            }}
-            className={`inline-block p-4 rounded-t-lg ${
-              activeTab === 'profile'
-                ? 'text-blue-600 bg-gray-100 dark:bg-gray-800 dark:text-blue-500'
-                : 'hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-300'
-            }`}
-          >
-            Profile
-          </a>
-        </li>
-        <li className="me-2">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              handleTabChange('contracts');
-            }}
-            className={`inline-block p-4 rounded-t-lg ${
-              activeTab === 'contracts'
-                ? 'text-blue-600 bg-gray-100 dark:bg-gray-800 dark:text-blue-500'
-                : 'hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-300'
-            }`}
-          >
-            Contracts
-          </a>
-        </li>
-        <li className="me-2">
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              handleTabChange('income');
-            }}
-            className={`inline-block p-4 rounded-t-lg ${
-              activeTab === 'income'
-                ? 'text-blue-600 bg-gray-100 dark:bg-gray-800 dark:text-blue-500'
-                : 'hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-300'
-            }`}
-          >
-            Income
-          </a>
-        </li>
-      </ul>
+    <>
+      <div className="mx-auto max-w-4xl px-4">
+        <Breadcrumb pageName="UserDetail" />
 
-      <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark flex justify-between items-center">
-          <h3 className="font-medium text-black dark:text-white">
-            {activeTab === 'profile'
-              ? 'User Profile'
-              : activeTab === 'contracts'
-              ? 'Contracts'
-              : 'Income'}
-          </h3>
-          {activeTab === 'profile' && (
+        <div className="bg-white shadow-md rounded-lg p-4">
+          {/* Tabs Navigation */}
+          <div className="flex border-b border-stroke">
             <button
-              onClick={handleEditClick}
-              className="bg-blue-500 text-white rounded px-4 py-2 font-medium hover:bg-blue-600 transition-colors"
+              onClick={() => setActiveTab('userInfo')}
+              className={`py-2 px-4 text-sm font-medium ${activeTab === 'userInfo' ? 'border-b-2 border-primary text-primary' : 'text-gray-600'} focus:outline-none`}
             >
-              Edit
+              User Info
             </button>
-          )}
-        </div>
+            <button
+              onClick={() => setActiveTab('contracts')}
+              className={`py-2 px-4 text-sm font-medium ${activeTab === 'contracts' ? 'border-b-2 border-primary text-primary' : 'text-gray-600'} focus:outline-none`}
+            >
+              Contracts
+            </button>
+            <button
+              onClick={() => setActiveTab('account')}
+              className={`py-2 px-4 text-sm font-medium ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-gray-600'} focus:outline-none`}
+            >
+              Account
+            </button>
+          </div>
 
-        <div className="p-6.5">
-          {activeTab === 'profile' && user ? (
-            <form>
-              <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
-                <div className="w-full xl:w-1/2">
-                  <label className="mb-2.5 block text-black dark:text-white">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={user.fullName || 'N/A'}
-                    readOnly
-                    className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                  />
+          {/* Tabs Content */}
+          <div className="pt-4">
+            {activeTab === 'userInfo' && apiUser && (
+              <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+                <div className="p-7">
+                  {/* Profile Image Section */}
+                  <div className="text-center mb-8">
+                    <div className="relative inline-block rounded-full overflow-hidden border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
+                      <img
+                        className="w-32 h-32 object-cover rounded-full"
+                        src={profileImage}
+                        alt="User Profile"
+                      />
+                    </div>
+                    <div className="mt-4">
+                      <input
+                        type="file"
+                        id="profileImage"
+                        name="profileImage"
+                        className="hidden"
+                        onChange={handleFileChange}
+                        disabled={!canEdit}
+                      />
+                      <label
+                        htmlFor="profileImage"
+                        className={`inline-block bg-primary text-white py-2 px-4 rounded cursor-pointer hover:bg-primary-dark ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                      >
+                        Choose File
+                      </label>
+                      {imageFile && (
+                        <button
+                          onClick={handleRemoveImage}
+                          className={`ml-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                          disabled={!canEdit}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Personal Information Form */}
+                  <div>
+                    <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
+                      <h3 className="font-medium text-black dark:text-white">
+                        Personal Information
+                      </h3>
+                    </div>
+                    <div className="p-7">
+                      <form
+                        action="#"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSaveChanges();
+                        }}
+                      >
+                        {/* Full Name and Nickname Row */}
+                        <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
+                          <div className="w-full sm:w-1/2">
+                            <label
+                              className="mb-3 block text-sm font-medium text-black dark:text-white"
+                              htmlFor="fullName"
+                            >
+                              Full Name
+                            </label>
+                            <input
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              type="text"
+                              name="fullName"
+                              id="fullName"
+                              placeholder="Devid Jhon"
+                              defaultValue={apiUser.fullName}
+                              disabled={!canEdit}
+                              onChange={(e) => setFormData({ ...apiUser, fullName: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="w-full sm:w-1/2">
+                            <label
+                              className="mb-3 block text-sm font-medium text-black dark:text-white"
+                              htmlFor="nickname"
+                            >
+                              Nickname
+                            </label>
+                            <input
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              type="text"
+                              name="nickname"
+                              id="nickname"
+                              placeholder="Dave"
+                              defaultValue={apiUser.nickname}
+                              disabled={!canEdit}
+                              onChange={(e) => setFormData({ ...apiUser, nickname: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Phone Number and Email Row */}
+                        <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
+                          <div className="w-full sm:w-1/2">
+                            <label
+                              className="mb-3 block text-sm font-medium text-black dark:text-white"
+                              htmlFor="phoneNumber"
+                            >
+                              Phone Number
+                            </label>
+                            <input
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              type="text"
+                              name="phoneNumber"
+                              id="phoneNumber"
+                              placeholder="+990 3343 7865"
+                              defaultValue={apiUser.phone}
+                              disabled={!canEdit}
+                              onChange={(e) => setFormData({ ...apiUser, phone: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="w-full sm:w-1/2">
+                            <label
+                              className="mb-3 block text-sm font-medium text-black dark:text-white"
+                              htmlFor="emailAddress"
+                            >
+                              Email Address
+                            </label>
+                            <input
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              type="email"
+                              name="emailAddress"
+                              id="emailAddress"
+                              placeholder="devidjond45@gmail.com"
+                              defaultValue={apiUser.email}
+                              disabled={!canEdit}
+                              onChange={(e) => setFormData({ ...apiUser, email: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Birthday and Identity Card Row */}
+                        <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
+                          <div className="w-full sm:w-1/2">
+                            <label
+                              className="mb-3 block text-sm font-medium text-black dark:text-white"
+                              htmlFor="birthday"
+                            >
+                              Birthday
+                            </label>
+                            <input
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              type="date"
+                              name="birthday"
+                              id="birthday"
+                              defaultValue={apiUser.birthday}
+                              disabled={!canEdit}
+                              onChange={(e) => setFormData({ ...apiUser, birthday: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="w-full sm:w-1/2">
+                            <label
+                              className="mb-3 block text-sm font-medium text-black dark:text-white"
+                              htmlFor="identityCard"
+                            >
+                              Identity Card
+                            </label>
+                            <input
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              type="text"
+                              name="identityCard"
+                              id="identityCard"
+                              placeholder="ID123456789"
+                              defaultValue={apiUser.identityCard}
+                              disabled={!canEdit}
+                              onChange={(e) => setFormData({ ...apiUser, identityCard: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Address Field */}
+                        <div className="mb-5.5">
+                          <label
+                            className="mb-3 block text-sm font-medium text-black dark:text-white"
+                            htmlFor="address"
+                          >
+                            Address
+                          </label>
+                          <input
+                            className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                            type="text"
+                            name="address"
+                            id="address"
+                            placeholder="1234 Elm Street"
+                            defaultValue={apiUser.address}
+                            disabled={!canEdit}
+                            onChange={(e) => setFormData({ ...apiUser, address: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end pt-4">
+                          <button
+                            type="submit"
+                            className={`rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                            disabled={!canEdit}
+                          >
+                            Save Changes
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
                 </div>
-                <div className="w-full xl:w-1/2">
-                  <label className="mb-2.5 block text-black dark:text-white">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={user.email || 'N/A'}
-                    readOnly
-                    className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                  />
-                </div>
               </div>
-              <div className="mb-4.5">
-                <label className="mb-2.5 block text-black dark:text-white">
-                  Phone
-                </label>
-                <input
-                  type="text"
-                  value={user.phone || 'N/A'}
-                  readOnly
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                />
-              </div>
-              <div className="mb-4.5">
-                <label className="mb-2.5 block text-black dark:text-white">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  value={user.address || 'N/A'}
-                  readOnly
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                />
-              </div>
-              <div className="mb-4.5">
-                <label className="mb-2.5 block text-black dark:text-white">
-                  Birthday
-                </label>
-                <input
-                  type="text"
-                  value={user.birthday || 'N/A'}
-                  readOnly
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                />
-              </div>
-              <div className="mb-4.5">
-                <label className="mb-2.5 block text-black dark:text-white">
-                  Status
-                </label>
-                <input
-                  type="text"
-                  value={user.active ? 'Active' : 'Inactive'}
-                  readOnly
-                  className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none dark:border-form-strokedark dark:bg-form-input dark:text-white"
-                />
-              </div>
-            </form>
-          ) : activeTab === 'contracts' ? (
-            <div>
-              <h4 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-200">
-                Contracts
-              </h4>
-              <ul>
-                {contracts.map((contract) => (
-                  <li
-                    key={contract.id}
-                    className="bg-white p-4 rounded-lg shadow-sm mb-2"
-                  >
-                    <p>
-                      <strong>Title:</strong> {contract.title}
-                    </p>
-                    <p>
-                      <strong>Start Date:</strong> {contract.startDate}
-                    </p>
-                    <p>
-                      <strong>End Date:</strong> {contract.endDate}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : activeTab === 'income' ? (
-            <div>
-              <h4 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-200">
-                Income
-              </h4>
-              <ul>
-                {income.map((record, index) => (
-                  <li
-                    key={index}
-                    className="bg-white p-4 rounded-lg shadow-sm mb-2"
-                  >
-                    <p>
-                      <strong>Month:</strong> {record.month}
-                    </p>
-                    <p>
-                      <strong>Amount:</strong> ${record.amount}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p>Select a tab to view content.</p>
-          )}
+            )}
+            {activeTab === 'contracts' && contractsContent}
+            {activeTab === 'account' && accountContent}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

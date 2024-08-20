@@ -12,33 +12,34 @@ const UsersList: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('fullName');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [sortOrder, setSortOrder] = useState<string>('asc');
+  const [pageSize] = useState<number>(10);
+  const [sortOrder] = useState<string>('desc');
   const [searchParams, setSearchParams] = useState<{
     query: string;
     filter: string;
-  } | null>(null); // Store search params
+  } | null>(null);
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.user.user);
 
-const hasRole = (user: User, roleName: string): boolean => {
-  return user.roles.some(role => role.roleName === roleName);
-};
+  const hasRole = (user: User, roleName: string): boolean => {
+    return user.roles.some(role => role.roleName === roleName);
+  };
 
-const isAdmin = user ? hasRole(user, "ADMIN") : false;
+  const isAdmin = user ? hasRole(user, "ADMIN") : false;
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         let url = `${config.apiBaseUrl}/users?page=${currentPage}&size=${pageSize}&sort=createdDate,${sortOrder}`;
 
         if (searchParams) {
-          url = `${config.apiBaseUrl}/users/search?${searchParams.filter}=${searchParams.query}&${currentPage}&size=${pageSize}&sort=createdDate,${sortOrder}`;
+          url = `${config.apiBaseUrl}/users/search?${searchParams.filter}=${searchParams.query}&page=${currentPage}&size=${pageSize}&sort=createdDate,${sortOrder}`;
         }
 
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -51,22 +52,22 @@ const isAdmin = user ? hasRole(user, "ADMIN") : false;
         setUsers(data.content);
         setTotalPages(data.totalPages);
         console.log('Data received:', data);
-      } catch (error) {
+      } catch (error: any) {
         setError(error.message);
         console.log('Error fetching data:', error);
       }
     };
 
     fetchUsers();
-  }, [currentPage, pageSize, sortOrder, searchParams]); // Depend on searchParams for conditional search
+  }, [currentPage, pageSize, sortOrder, searchParams]);
 
   const handleRowClick = (userId: number) => {
     navigate(`/user-detail/${userId}`);
   };
 
   const handleSearch = () => {
-    setSearchParams({ query: searchQuery, filter: filterType }); // Set search params and trigger search
-    setCurrentPage(1); // Reset to first page on search
+    setSearchParams({ query: searchQuery, filter: filterType });
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -75,16 +76,16 @@ const isAdmin = user ? hasRole(user, "ADMIN") : false;
     }
   };
 
-  // Handle enter key press in the input field
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       handleSearch();
     }
   };
+
   const handleAddUser = () => {
-    // Navigate to add user page or perform any other action
     navigate('/add-user');
   };
+
   return (
     <>
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -95,7 +96,6 @@ const isAdmin = user ? hasRole(user, "ADMIN") : false;
 
           {/* Search bar and filter dropdown */}
           <div className="flex items-center space-x-4 py-4">
-            {/* Dropdown filter */}
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
@@ -108,7 +108,6 @@ const isAdmin = user ? hasRole(user, "ADMIN") : false;
               <option value="nickname">Nickname</option>
             </select>
 
-            {/* Search bar */}
             <input
               type="text"
               placeholder="Search..."
@@ -118,7 +117,6 @@ const isAdmin = user ? hasRole(user, "ADMIN") : false;
               className="border border-stroke rounded-md py-2 px-4 w-64 dark:bg-boxdark dark:border-strokedark"
             />
 
-            {/* Search button */}
             <button
               onClick={handleSearch}
               className="bg-primary text-white rounded-md py-2 px-4 hover:bg-primary-dark focus:outline-none"
@@ -136,65 +134,56 @@ const isAdmin = user ? hasRole(user, "ADMIN") : false;
           </div>
         </div>
 
-        <div className="grid grid-cols-7 border-t border-stroke py-4.5 px-4 dark:border-strokedark sm:grid-cols-7 md:px-6 2xl:px-7.5">
-          <div className="col-span-1 flex items-center">
-            <p className="font-medium">Họ Tên</p>
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-4 gap-2 border-t border-stroke py-4.5 px-4 dark:border-strokedark"
+               style={{ gridTemplateColumns: '30% 20% 30% 20%' }}>
+            {/* Header Row */}
+            <div className="flex items-center px-4 py-2">
+              <p className="font-medium truncate">Họ Tên</p>
+            </div>
+            <div className="flex items-center px-4 py-2">
+              <p className="font-medium truncate">SDT</p>
+            </div>
+            <div className="flex items-center px-4 py-2">
+              <p className="font-medium truncate">Email</p>
+            </div>
+            <div className="flex items-center px-4 py-2">
+              <p className="font-medium truncate">Trạng thái</p>
+            </div>
           </div>
-          <div className="col-span-1 hidden items-center sm:flex">
-            <p className="font-medium">SDT</p>
-          </div>
-          <div className="col-span-1 flex items-center">
-            <p className="font-medium">Email</p>
-          </div>
-          <div className="col-span-1 flex items-center">
-            <p className="font-medium">Địa chỉ</p>
-          </div>
-          <div className="col-span-1 flex items-center">
-            <p className="font-medium">Ngày sinh</p>
-          </div>
-          <div className="col-span-1 flex items-center">
-            <p className="font-medium">Trạng thái</p>
-          </div>
-        </div>
 
-        {users.map((user) => (
-          <div
-            className="grid grid-cols-7 border-t border-stroke py-4.5 px-4 dark:border-strokedark sm:grid-cols-7 md:px-6 2xl:px-7.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-            key={user.id}
-            onClick={() => handleRowClick(user.id)}
-          >
-            <div className="col-span-1 flex items-center truncate">
-              <p className="text-sm text-black dark:text-white w-full">
-                {user.fullName || 'Thien'}
-              </p>
+          {users.map((user) => (
+            <div
+              className="grid grid-cols-4 gap-2 border-t border-stroke py-4.5 px-4 dark:border-strokedark cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+              key={user.id}
+              onClick={() => handleRowClick(user.id)}
+              style={{ gridTemplateColumns: '30% 20% 30% 20%' }}
+            >
+              {/* Avatar */}
+              <div className="flex items-center px-4 py-2">
+                <img
+                  src={`${config.apiBaseUrl}/${user.image}`} // Assuming user ID is used to fetch the image
+                  alt={user.fullName}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <p className="ml-4 text-sm text-black dark:text-white truncate">{user.fullName || 'Thien'}</p>
+              </div>
+              <div className="flex items-center px-4 py-2">
+                <p className="text-sm text-black dark:text-white truncate">{user.phone || 'N/A'}</p>
+              </div>
+              <div className="flex items-center px-4 py-2">
+                <p className="text-sm text-black dark:text-white truncate">{user.email || 'N/A'}</p>
+              </div>
+              <div className="flex items-center px-4 py-2">
+  <p
+    className={`text-sm truncate ${user.active ? 'text-green-500' : 'text-gray-500'}`}
+  >
+    {user.active ? 'Hoạt Động' : 'Vô hiệu hóa'}
+  </p>
+</div>
             </div>
-            <div className="col-span-1 hidden items-center sm:flex truncate">
-              <p className="text-sm text-black dark:text-white w-full">
-                {user.phone || 'N/A'}
-              </p>
-            </div>
-            <div className="col-span-1 flex items-center truncate">
-              <p className="text-sm text-black dark:text-white w-full">
-                {user.email || 'N/A'}
-              </p>
-            </div>
-            <div className="col-span-1 flex items-center truncate">
-              <p className="text-sm text-black dark:text-white w-full">
-                {user.address || 'N/A'}
-              </p>
-            </div>
-            <div className="col-span-1 flex items-center truncate">
-              <p className="text-sm text-black dark:text-white w-full">
-                {user.birthday || 'N/A'}
-              </p>
-            </div>
-            <div className="col-span-1 flex items-center truncate">
-              <p className="text-sm text-meta-3 w-full">
-                {user.active ? 'Active' : 'Inactive'}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
 
         {/* Pagination Controls */}
         <div className="py-4 px-4 flex justify-between items-center">

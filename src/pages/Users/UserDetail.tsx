@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Breadcrumb from '../../components/Breadcrumbs/Breadcrumb';
 import defaultProfileImg from '../../images/user/user-03.png';
-import { User } from '../../types/common'; // Import User type
+import { User, Role } from '../../types/common'; // Import User and Role types
 import { config } from '../../common/config';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/UserStore';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 
 const contractsContent = <div>Contracts Content</div>;
 const accountContent = <div>Account Content</div>;
+
+const rolesList = ['MANAGER', 'ADMIN', 'ACCOUNTANT', 'TEACHER'];
 
 const UserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +22,9 @@ const UserDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<User | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
+  // For role management
+  const [, setSelectedRoles] = useState<Set<string>>(new Set());
 
   // Get the global user from Redux
   const globalUser = useSelector((state: RootState) => state.user.user);
@@ -30,7 +35,7 @@ const UserDetail: React.FC = () => {
         setLoading(true);
         const response = await fetch(`${config.apiBaseUrl}/users/${id}`, {
           headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('token')}`, // Replace with your token
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`, // Replace with your token
             'Content-Type': 'application/json',
           },
         });
@@ -39,8 +44,16 @@ const UserDetail: React.FC = () => {
         }
         const userData: User = await response.json();
         setApiUser(userData);
-        setProfileImage(userData.image ? `${config.apiBaseUrl}/${userData.image}` : defaultProfileImg);
+        setProfileImage(
+          userData.image
+            ? `${config.apiBaseUrl}/${userData.image}`
+            : defaultProfileImg,
+        );
         setFormData(userData);
+
+        // Initialize selected roles
+        const roleNames: string[] = userData.roles.map((role) => role.roleName);
+        setRoles(roleNames);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -64,7 +77,11 @@ const UserDetail: React.FC = () => {
   };
 
   const handleRemoveImage = () => {
-    setProfileImage(apiUser?.image ? `${config.apiBaseUrl}/${apiUser.image}` : defaultProfileImg);
+    setProfileImage(
+      apiUser?.image
+        ? `${config.apiBaseUrl}/${apiUser.image}`
+        : defaultProfileImg,
+    );
     setImageFile(null);
   };
 
@@ -73,74 +90,96 @@ const UserDetail: React.FC = () => {
       // Prepare FormData for image upload
       const imageFormData = new FormData();
       imageFormData.append('image', imageFile);
-  
+
       try {
-        const imageResponse = await fetch(`${config.apiBaseUrl}/users/image/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+        const imageResponse = await fetch(
+          `${config.apiBaseUrl}/users/image/${id}`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+            },
+            body: imageFormData,
           },
-          body: imageFormData,
-        });
-  
+        );
+
         if (!imageResponse.ok) {
           throw new Error('Failed to update profile image');
         }
       } catch (error) {
-        toast.error('Không thay đổi được hình ảnh');
+        toast.error('Cannot update image');
         return;
       }
     }
-  
+    console.log('check role ne2', roles);
     // Prepare JSON for user details update
     const userDetails = {
       username: formData?.username || apiUser?.username,
-    //  roles: Array.isArray(formData?.roles) ? formData.roles : apiUser?.roles || [], // Ensure roles is an array
       fullName: formData?.fullName || apiUser?.fullName,
       email: formData?.email || apiUser?.email,
       phone: formData?.phone || apiUser?.phone,
       address: formData?.address || apiUser?.address,
       nickname: formData?.nickname || apiUser?.nickname,
       birthday: formData?.birthday || apiUser?.birthday,
-      image: profileImage || apiUser?.image, // Ensure the image URL is set correctly
+      image: profileImage || apiUser?.image,
       identityCard: formData?.identityCard || apiUser?.identityCard,
-      active: formData?.active !== undefined ? formData.active : apiUser?.active, // Ensure active field is set
+      active:
+        formData?.active !== undefined ? formData.active : apiUser?.active,
+      roles: roles.length > 0 ? roles : null,
     };
-  
+
     try {
       const userResponse = await fetch(`${config.apiBaseUrl}/users/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}`,
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(userDetails),
       });
-  
+
       if (!userResponse.ok) {
         throw new Error('Failed to update user details');
       }
-  
+      console.log(roles);
+
       const updatedUser: User = await userResponse.json();
       setApiUser(updatedUser);
       setFormData(updatedUser);
       toast.success('Changes saved successfully');
-      // Optionally reload the user profile page
-      // window.location.reload();
     } catch (error) {
-      toast.error('Cập nhật thất bại');
+      toast.error('Update failed');
     }
   };
-  
+
+  const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const role = event.target.value;
+
+    setRoles((prevRoles) => {
+      // Check if the checkbox is checked
+      if (event.target.checked) {
+        // Add the role if the checkbox is checked
+        return [...prevRoles, role];
+      } else {
+        // Remove the role if the checkbox is unchecked
+        // Check if there's only one role left and reset if needed
+        if (prevRoles.length === 1 && prevRoles[0] === role) {
+          console.log('asdasdasdasd');
+          return []; // Return an empty array if it's the only role
+        }
+        // Otherwise, filter out the unchecked role
+        return prevRoles.filter((r) => r !== role);
+      }
+    });
+  };
 
   const hasRole = (user: User, roleName: string): boolean => {
-    return user.roles.some(role => role.roleName === roleName);
+    return user.roles.some((role) => role.roleName === roleName);
   };
 
   // Check if the global user can edit
   const isAdmin = globalUser && hasRole(globalUser, 'ADMIN');
-  const canEdit = apiUser && (isAdmin || globalUser.id === apiUser.id);
-
+  const canEdit = apiUser && (isAdmin || globalUser?.id === apiUser?.id);
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -154,19 +193,31 @@ const UserDetail: React.FC = () => {
           <div className="flex border-b border-stroke">
             <button
               onClick={() => setActiveTab('userInfo')}
-              className={`py-2 px-4 text-sm font-medium ${activeTab === 'userInfo' ? 'border-b-2 border-primary text-primary' : 'text-gray-600'} focus:outline-none`}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'userInfo'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-gray-600'
+              } focus:outline-none`}
             >
               User Info
             </button>
             <button
               onClick={() => setActiveTab('contracts')}
-              className={`py-2 px-4 text-sm font-medium ${activeTab === 'contracts' ? 'border-b-2 border-primary text-primary' : 'text-gray-600'} focus:outline-none`}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'contracts'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-gray-600'
+              } focus:outline-none`}
             >
               Contracts
             </button>
             <button
               onClick={() => setActiveTab('account')}
-              className={`py-2 px-4 text-sm font-medium ${activeTab === 'account' ? 'border-b-2 border-primary text-primary' : 'text-gray-600'} focus:outline-none`}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'account'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-gray-600'
+              } focus:outline-none`}
             >
               Account
             </button>
@@ -197,14 +248,18 @@ const UserDetail: React.FC = () => {
                       />
                       <label
                         htmlFor="profileImage"
-                        className={`inline-block bg-primary text-white py-2 px-4 rounded cursor-pointer hover:bg-primary-dark ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                        className={`inline-block bg-primary text-white py-2 px-4 rounded cursor-pointer hover:bg-primary-dark ${
+                          !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
                       >
                         Choose File
                       </label>
                       {imageFile && (
                         <button
                           onClick={handleRemoveImage}
-                          className={`ml-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                          className={`ml-4 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 ${
+                            !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
                           disabled={!canEdit}
                         >
                           Remove
@@ -238,14 +293,21 @@ const UserDetail: React.FC = () => {
                               Full Name
                             </label>
                             <input
-                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                                !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
                               type="text"
                               name="fullName"
                               id="fullName"
                               placeholder="Devid Jhon"
                               defaultValue={apiUser.fullName}
                               disabled={!canEdit}
-                              onChange={(e) => setFormData({ ...apiUser, fullName: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...apiUser,
+                                  fullName: e.target.value,
+                                })
+                              }
                             />
                           </div>
 
@@ -257,18 +319,24 @@ const UserDetail: React.FC = () => {
                               Nickname
                             </label>
                             <input
-                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                                !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
                               type="text"
                               name="nickname"
                               id="nickname"
                               placeholder="Dave"
                               defaultValue={apiUser.nickname}
                               disabled={!canEdit}
-                              onChange={(e) => setFormData({ ...apiUser, nickname: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...apiUser,
+                                  nickname: e.target.value,
+                                })
+                              }
                             />
                           </div>
                         </div>
-
                         {/* Phone Number and Email Row */}
                         <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
                           <div className="w-full sm:w-1/2">
@@ -279,14 +347,21 @@ const UserDetail: React.FC = () => {
                               Phone Number
                             </label>
                             <input
-                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                                !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
                               type="text"
                               name="phoneNumber"
                               id="phoneNumber"
                               placeholder="+990 3343 7865"
                               defaultValue={apiUser.phone}
                               disabled={!canEdit}
-                              onChange={(e) => setFormData({ ...apiUser, phone: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...apiUser,
+                                  phone: e.target.value,
+                                })
+                              }
                             />
                           </div>
 
@@ -298,18 +373,24 @@ const UserDetail: React.FC = () => {
                               Email Address
                             </label>
                             <input
-                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                                !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
                               type="email"
                               name="emailAddress"
                               id="emailAddress"
                               placeholder="devidjond45@gmail.com"
                               defaultValue={apiUser.email}
                               disabled={!canEdit}
-                              onChange={(e) => setFormData({ ...apiUser, email: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...apiUser,
+                                  email: e.target.value,
+                                })
+                              }
                             />
                           </div>
                         </div>
-
                         {/* Birthday and Identity Card Row */}
                         <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
                           <div className="w-full sm:w-1/2">
@@ -320,13 +401,20 @@ const UserDetail: React.FC = () => {
                               Birthday
                             </label>
                             <input
-                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                                !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
                               type="date"
                               name="birthday"
                               id="birthday"
                               defaultValue={apiUser.birthday}
                               disabled={!canEdit}
-                              onChange={(e) => setFormData({ ...apiUser, birthday: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...apiUser,
+                                  birthday: e.target.value,
+                                })
+                              }
                             />
                           </div>
 
@@ -338,18 +426,24 @@ const UserDetail: React.FC = () => {
                               Identity Card
                             </label>
                             <input
-                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                              className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                                !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                              }`}
                               type="text"
                               name="identityCard"
                               id="identityCard"
                               placeholder="ID123456789"
                               defaultValue={apiUser.identityCard}
                               disabled={!canEdit}
-                              onChange={(e) => setFormData({ ...apiUser, identityCard: e.target.value })}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...apiUser,
+                                  identityCard: e.target.value,
+                                })
+                              }
                             />
                           </div>
                         </div>
-
                         {/* Address Field */}
                         <div className="mb-5.5">
                           <label
@@ -359,21 +453,56 @@ const UserDetail: React.FC = () => {
                             Address
                           </label>
                           <input
-                            className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                            className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                              !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                             type="text"
                             name="address"
                             id="address"
                             placeholder="1234 Elm Street"
                             defaultValue={apiUser.address}
                             disabled={!canEdit}
-                            onChange={(e) => setFormData({ ...apiUser, address: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...apiUser,
+                                address: e.target.value,
+                              })
+                            }
                           />
                         </div>
-
+                        {/* Role Selection */}
+                        <div className="mb-5.5">
+                          <label className="mb-3 block text-sm font-medium text-black dark:text-white">
+                            Roles
+                          </label>
+                          <div className="flex flex-wrap gap-4">
+                            {rolesList.map((role) => (
+                              <div key={role} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`role-${role}`}
+                                  value={role}
+                                  checked={roles.includes(role)}
+                                  onChange={handleRoleChange}
+                                  disabled={!isAdmin} // Update this line
+                                  className="mr-2"
+                                />
+                                <label
+                                  className="ml-2"
+                                  htmlFor={`role-${role}`}
+                                >
+                                  {role}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                         <div className="flex items-center justify-end pt-4">
                           <button
                             type="submit"
-                            className={`rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark ${!canEdit ? 'cursor-not-allowed opacity-50' : ''}`}
+                            className={`rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark ${
+                              !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                             disabled={!canEdit}
                           >
                             Save Changes
@@ -390,6 +519,7 @@ const UserDetail: React.FC = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </>
   );
 };

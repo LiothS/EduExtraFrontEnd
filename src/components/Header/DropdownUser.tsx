@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/UserStore';
 import { clearUser } from '../../redux/UserSlice';
+import { config } from '../../common/config';
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -17,6 +18,7 @@ const DropdownUser = () => {
     sessionStorage.clear();
     logout(); // Call the logout function from context
   };
+  const imgSource = `${config.apiBaseUrl}/${user?.image}`;
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
       <Link
@@ -34,10 +36,13 @@ const DropdownUser = () => {
           </span>
         </span>
 
-        <span className="h-12 w-12 rounded-full">
-          <img src={UserOne} alt="User" />
+        <span className="block h-12 w-12 rounded-full overflow-hidden">
+          <img
+            src={imgSource}
+            alt="User"
+            className="w-full h-full object-cover"
+          />
         </span>
-
         <svg
           className="hidden fill-current sm:block"
           width="12"

@@ -4,9 +4,10 @@ import Breadcrumb from '../../components/Breadcrumbs/Breadcrumb';
 import defaultProfileImg from '../../images/user/user-03.png';
 import { User, Role } from '../../types/common'; // Import User and Role types
 import { config } from '../../common/config';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/UserStore';
 import { toast, ToastContainer } from 'react-toastify';
+import { setUser, updateUser } from '../../redux/UserSlice';
 
 const contractsContent = <div>Contracts Content</div>;
 const accountContent = <div>Account Content</div>;
@@ -23,11 +24,14 @@ const UserDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<User | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
+  const [isActive, setIsActive] = useState<boolean>(false); 
+  const [enabled, setEnabled] = useState<boolean>(false);
   // For role management
   const [, setSelectedRoles] = useState<Set<string>>(new Set());
 
   // Get the global user from Redux
   const globalUser = useSelector((state: RootState) => state.user.user);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -54,6 +58,7 @@ const UserDetail: React.FC = () => {
         // Initialize selected roles
         const roleNames: string[] = userData.roles.map((role) => role.roleName);
         setRoles(roleNames);
+        setIsActive(userData.active);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -107,11 +112,11 @@ const UserDetail: React.FC = () => {
           throw new Error('Failed to update profile image');
         }
       } catch (error) {
+        console.log("error:", error);
         toast.error('Cannot update image');
         return;
       }
     }
-    console.log('check role ne2', roles);
     // Prepare JSON for user details update
     const userDetails = {
       username: formData?.username || apiUser?.username,
@@ -123,8 +128,7 @@ const UserDetail: React.FC = () => {
       birthday: formData?.birthday || apiUser?.birthday,
       image: profileImage || apiUser?.image,
       identityCard: formData?.identityCard || apiUser?.identityCard,
-      active:
-        formData?.active !== undefined ? formData.active : apiUser?.active,
+      active: isActive,
       roles: roles.length > 0 ? roles : null,
     };
 
@@ -141,11 +145,13 @@ const UserDetail: React.FC = () => {
       if (!userResponse.ok) {
         throw new Error('Failed to update user details');
       }
-      console.log(roles);
 
       const updatedUser: User = await userResponse.json();
       setApiUser(updatedUser);
       setFormData(updatedUser);
+      if (globalUser?.id === apiUser?.id) {
+        dispatch(updateUser(updatedUser));
+      }
       toast.success('Changes saved successfully');
     } catch (error) {
       toast.error('Update failed');
@@ -164,7 +170,6 @@ const UserDetail: React.FC = () => {
         // Remove the role if the checkbox is unchecked
         // Check if there's only one role left and reset if needed
         if (prevRoles.length === 1 && prevRoles[0] === role) {
-          console.log('asdasdasdasd');
           return []; // Return an empty array if it's the only role
         }
         // Otherwise, filter out the unchecked role
@@ -470,6 +475,35 @@ const UserDetail: React.FC = () => {
                             }
                           />
                         </div>
+                         {/* Toggle Switch */}
+                   
+                        {/* Toggle Switch */}
+                  <div className="mb-6 mt-6"> {/* Add margin top and bottom */}
+                    <label
+                      htmlFor="toggle1"
+                      className="flex cursor-pointer select-none items-center space-x-3" // Added space-x-3 for horizontal spacing
+                    >
+                      <span className="text-sm font-medium text-black dark:text-white">
+                        Status
+                      </span>
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          id="toggle1"
+                          className="sr-only"
+                          onChange={() => {
+                            setIsActive(!isActive);
+                          }}
+                        />
+                        <div className="block h-8 w-14 rounded-full bg-meta-9 dark:bg-[#5A616B]"></div>
+                        <div
+                          className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white transition ${
+                            isActive && '!right-1 !translate-x-full !bg-primary dark:!bg-white'
+                          }`}
+                        ></div>
+                      </div>
+                    </label>
+                  </div>
                         {/* Role Selection */}
                         <div className="mb-5.5">
                           <label className="mb-3 block text-sm font-medium text-black dark:text-white">
@@ -525,3 +559,4 @@ const UserDetail: React.FC = () => {
 };
 
 export default UserDetail;
+

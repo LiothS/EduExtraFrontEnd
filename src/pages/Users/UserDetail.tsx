@@ -24,7 +24,7 @@ const UserDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<User | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
-  const [isActive, setIsActive] = useState<boolean>(false); 
+  const [isActive, setIsActive] = useState<boolean>(false);
   const [enabled, setEnabled] = useState<boolean>(false);
   // For role management
   const [, setSelectedRoles] = useState<Set<string>>(new Set());
@@ -112,7 +112,7 @@ const UserDetail: React.FC = () => {
           throw new Error('Failed to update profile image');
         }
       } catch (error) {
-        console.log("error:", error);
+        console.log('error:', error);
         toast.error('Cannot update image');
         return;
       }
@@ -475,35 +475,38 @@ const UserDetail: React.FC = () => {
                             }
                           />
                         </div>
-                         {/* Toggle Switch */}
-                   
                         {/* Toggle Switch */}
-                  <div className="mb-6 mt-6"> {/* Add margin top and bottom */}
-                    <label
-                      htmlFor="toggle1"
-                      className="flex cursor-pointer select-none items-center space-x-3" // Added space-x-3 for horizontal spacing
-                    >
-                      <span className="text-sm font-medium text-black dark:text-white">
-                        Status
-                      </span>
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          id="toggle1"
-                          className="sr-only"
-                          onChange={() => {
-                            setIsActive(!isActive);
-                          }}
-                        />
-                        <div className="block h-8 w-14 rounded-full bg-meta-9 dark:bg-[#5A616B]"></div>
-                        <div
-                          className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white transition ${
-                            isActive && '!right-1 !translate-x-full !bg-primary dark:!bg-white'
-                          }`}
-                        ></div>
-                      </div>
-                    </label>
-                  </div>
+
+                        {/* Toggle Switch */}
+                        <div className="mb-6 mt-6">
+                          {' '}
+                          {/* Add margin top and bottom */}
+                          <label
+                            htmlFor="toggle1"
+                            className="flex cursor-pointer select-none items-center space-x-3" // Added space-x-3 for horizontal spacing
+                          >
+                            <span className="text-sm font-medium text-black dark:text-white">
+                              Status
+                            </span>
+                            <div className="relative">
+                              <input
+                                type="checkbox"
+                                id="toggle1"
+                                className="sr-only"
+                                onChange={() => {
+                                  setIsActive(!isActive);
+                                }}
+                              />
+                              <div className="block h-8 w-14 rounded-full bg-meta-9 dark:bg-[#5A616B]"></div>
+                              <div
+                                className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white transition ${
+                                  isActive &&
+                                  '!right-1 !translate-x-full !bg-primary dark:!bg-white'
+                                }`}
+                              ></div>
+                            </div>
+                          </label>
+                        </div>
                         {/* Role Selection */}
                         <div className="mb-5.5">
                           <label className="mb-3 block text-sm font-medium text-black dark:text-white">
@@ -559,4 +562,3 @@ const UserDetail: React.FC = () => {
 };
 
 export default UserDetail;
-

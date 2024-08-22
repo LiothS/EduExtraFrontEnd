@@ -8,8 +8,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/UserStore';
 import { toast, ToastContainer } from 'react-toastify';
 import { setUser, updateUser } from '../../redux/UserSlice';
+import ContractsTab from '../../components/Contract/ContractsTab';
 
-const contractsContent = <div>Contracts Content</div>;
 const accountContent = <div>Account Content</div>;
 
 const rolesList = ['MANAGER', 'ADMIN', 'ACCOUNTANT', 'TEACHER'];
@@ -551,7 +551,9 @@ const UserDetail: React.FC = () => {
                 </div>
               </div>
             )}
-            {activeTab === 'contracts' && contractsContent}
+            {activeTab === 'contracts' && apiUser && (
+              <ContractsTab userId={apiUser.id} />
+            )}
             {activeTab === 'account' && accountContent}
           </div>
         </div>

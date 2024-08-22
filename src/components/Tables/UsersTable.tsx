@@ -22,10 +22,10 @@ const UsersList: React.FC = () => {
   const user = useSelector((state: RootState) => state.user.user);
 
   const hasRole = (user: User, roleName: string): boolean => {
-    return user.roles.some(role => role.roleName === roleName);
+    return user.roles.some((role) => role.roleName === roleName);
   };
 
-  const isAdmin = user ? hasRole(user, "ADMIN") : false;
+  const isAdmin = user ? hasRole(user, 'ADMIN') : false;
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -86,6 +86,26 @@ const UsersList: React.FC = () => {
     navigate('/add-user');
   };
 
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-4 py-2 mx-1 rounded ${
+            i === currentPage
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-300 text-gray-700'
+          }`}
+        >
+          {i}
+        </button>,
+      );
+    }
+    return pageNumbers;
+  };
+
   return (
     <>
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -135,8 +155,10 @@ const UsersList: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-4 gap-2 border-t border-stroke py-4.5 px-4 dark:border-strokedark"
-               style={{ gridTemplateColumns: '30% 20% 30% 20%' }}>
+          <div
+            className="grid grid-cols-4 gap-2 border-t border-stroke py-4.5 px-4 dark:border-strokedark"
+            style={{ gridTemplateColumns: '30% 20% 30% 20%' }}
+          >
             {/* Header Row */}
             <div className="flex items-center px-4 py-2">
               <p className="font-medium truncate">Họ Tên</p>
@@ -166,44 +188,36 @@ const UsersList: React.FC = () => {
                   alt={user.fullName}
                   className="w-12 h-12 rounded-full object-cover"
                 />
-                <p className="ml-4 text-sm text-black dark:text-white truncate">{user.fullName || 'Thien'}</p>
+                <p className="ml-4 text-sm text-black dark:text-white truncate">
+                  {user.fullName || 'Thien'}
+                </p>
               </div>
               <div className="flex items-center px-4 py-2">
-                <p className="text-sm text-black dark:text-white truncate">{user.phone || 'N/A'}</p>
+                <p className="text-sm text-black dark:text-white truncate">
+                  {user.phone || 'N/A'}
+                </p>
               </div>
               <div className="flex items-center px-4 py-2">
-                <p className="text-sm text-black dark:text-white truncate">{user.email || 'N/A'}</p>
+                <p className="text-sm text-black dark:text-white truncate">
+                  {user.email || 'N/A'}
+                </p>
               </div>
               <div className="flex items-center px-4 py-2">
-  <p
-    className={`text-sm truncate ${user.active ? 'text-green-500' : 'text-gray-500'}`}
-  >
-    {user.active ? 'Hoạt Động' : 'Vô hiệu hóa'}
-  </p>
-</div>
+                <p
+                  className={`text-sm truncate ${
+                    user.active ? 'text-green-500' : 'text-gray-500'
+                  }`}
+                >
+                  {user.active ? 'Hoạt Động' : 'Vô hiệu hóa'}
+                </p>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Pagination Controls */}
-        <div className="py-4 px-4 flex justify-between items-center">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="bg-primary text-white rounded-md py-2 px-4 hover:bg-primary-dark focus:outline-none"
-          >
-            Previous
-          </button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="bg-primary text-white rounded-md py-2 px-4 hover:bg-primary-dark focus:outline-none"
-          >
-            Next
-          </button>
+        {/* Numeric Pagination Controls */}
+        <div className="py-4 px-4 flex justify-center items-center space-x-2">
+          {renderPageNumbers()}
         </div>
       </div>
     </>

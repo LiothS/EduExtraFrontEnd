@@ -28,13 +28,14 @@ const AddUser: React.FC = () => {
   const [nickname, setNickname] = useState<string>('');
   const [address, setAddress] = useState<string>('');
   const [identityCard, setIdentityCard] = useState<string>('');
+  const [description, setDescription] = useState<string>(''); // New description state
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    flatpickr("#birthday", {
-      dateFormat: "d/m/Y",
+    flatpickr('#birthday', {
+      dateFormat: 'd/m/Y',
       onChange: (selectedDates) => {
         if (selectedDates.length > 0) {
           setBirthday(selectedDates[0].toLocaleDateString('en-GB'));
@@ -48,7 +49,7 @@ const AddUser: React.FC = () => {
     if (event.target.checked) {
       setRoles([...roles, role]);
     } else {
-      setRoles(roles.filter(r => r !== role));
+      setRoles(roles.filter((r) => r !== role));
     }
   };
 
@@ -56,11 +57,13 @@ const AddUser: React.FC = () => {
     const newErrors: { [key: string]: string } = {};
     if (!username) newErrors.username = 'Username is required';
     if (!phone) newErrors.phone = 'Phone number is required';
-    if (password !== confirmPassword) newErrors.password = 'Passwords do not match';
+    if (password !== confirmPassword)
+      newErrors.password = 'Passwords do not match';
     if (!email) newErrors.email = 'Email is required';
     if (!fullName) newErrors.fullName = 'Full Name is required';
     if (!address) newErrors.address = 'Address is required';
     if (!identityCard) newErrors.identityCard = 'Identity Card is required';
+    if (!description) newErrors.description = 'Description is required'; // Validate description
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,28 +93,40 @@ const AddUser: React.FC = () => {
           nickname,
           birthday: formattedBirthday,
           identityCard,
+          description, // Add description to payload
           active: true,
         };
 
-        const response = await axios.post('http://localhost:8080/users', payload, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+        const response = await axios.post(
+          'http://localhost:8080/users',
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
           },
-        });
+        );
 
         if (response.status === 200) {
-          toast.success('User added successfully');
+          toast.success('User added successfully', {
+            autoClose: 500,
+          });
           setTimeout(() => {
             navigate(-1); // Navigate back to the previous page
           }, 2000); // Delay to allow user to see the success message
         } else {
           console.error('Failed to submit form', response.data);
           setErrorMessage(response.data.message || 'An error occurred');
+          toast.error('Thêm thất bại', {
+            autoClose: 500,
+          });
         }
       } catch (error: any) {
         console.error('Error submitting form', error);
-        setErrorMessage(error.response?.data?.message || 'An unexpected error occurred');
+        setErrorMessage(
+          error.response?.data?.message || 'An unexpected error occurred',
+        );
       }
     }
   };
@@ -125,33 +140,47 @@ const AddUser: React.FC = () => {
           <div className="lg:col-span-2">
             <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
-                <h3 className="font-medium text-black dark:text-white">User Details</h3>
+                <h3 className="font-medium text-black dark:text-white">
+                  User Details
+                </h3>
               </div>
               <div className="p-7">
                 <form onSubmit={handleSubmit}>
                   {/* Username Field */}
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="username">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="username"
+                    >
                       Username
                     </label>
                     <input
-                      className={`w-full rounded border ${errors.username ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      className={`w-full rounded border ${
+                        errors.username ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="text"
                       id="username"
                       placeholder="username123"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                     />
-                    {errors.username && <p className="text-red-500 text-sm">{errors.username}</p>}
+                    {errors.username && (
+                      <p className="text-red-500 text-sm">{errors.username}</p>
+                    )}
                   </div>
 
                   {/* Password Fields */}
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="password">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="password"
+                    >
                       Password
                     </label>
                     <input
-                      className={`w-full rounded border ${errors.password ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      className={`w-full rounded border ${
+                        errors.password ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="password"
                       id="password"
                       placeholder="••••••••"
@@ -160,24 +189,34 @@ const AddUser: React.FC = () => {
                     />
                   </div>
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="confirmPassword">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="confirmPassword"
+                    >
                       Confirm Password
                     </label>
                     <input
-                      className={`w-full rounded border ${errors.password ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      className={`w-full rounded border ${
+                        errors.password ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="password"
                       id="confirmPassword"
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
-                    {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+                    {errors.password && (
+                      <p className="text-red-500 text-sm">{errors.password}</p>
+                    )}
                   </div>
 
                   {/* Full Name & Nickname Fields */}
                   <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
                     <div className="w-full sm:w-1/2">
-                      <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="fullName">
+                      <label
+                        className="mb-3 block text-sm font-medium text-black dark:text-white"
+                        htmlFor="fullName"
+                      >
                         Full Name
                       </label>
                       <input
@@ -188,10 +227,17 @@ const AddUser: React.FC = () => {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                       />
-                      {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
+                      {errors.fullName && (
+                        <p className="text-red-500 text-sm">
+                          {errors.fullName}
+                        </p>
+                      )}
                     </div>
                     <div className="w-full sm:w-1/2">
-                      <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="nickname">
+                      <label
+                        className="mb-3 block text-sm font-medium text-black dark:text-white"
+                        htmlFor="nickname"
+                      >
                         Nickname
                       </label>
                       <input
@@ -207,71 +253,104 @@ const AddUser: React.FC = () => {
 
                   {/* Phone Field */}
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="phone">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="phone"
+                    >
                       Phone Number
                     </label>
                     <input
-                      className={`w-full rounded border ${errors.phone ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      className={`w-full rounded border ${
+                        errors.phone ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="tel"
                       id="phone"
                       placeholder="+1234567890"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
-                    {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+                    {errors.phone && (
+                      <p className="text-red-500 text-sm">{errors.phone}</p>
+                    )}
                   </div>
 
                   {/* Email Field */}
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="email">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="email"
+                    >
                       Email Address
                     </label>
                     <input
-                      className={`w-full rounded border ${errors.email ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      className={`w-full rounded border ${
+                        errors.email ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="email"
                       id="email"
                       placeholder="john.doe@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
-                    {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+                    {errors.email && (
+                      <p className="text-red-500 text-sm">{errors.email}</p>
+                    )}
                   </div>
 
                   {/* Address Field */}
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="address">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="address"
+                    >
                       Address
                     </label>
                     <input
-                      className={`w-full rounded border ${errors.address ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      className={`w-full rounded border ${
+                        errors.address ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="text"
                       id="address"
                       placeholder="123 Main St"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                     />
-                    {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
+                    {errors.address && (
+                      <p className="text-red-500 text-sm">{errors.address}</p>
+                    )}
                   </div>
 
                   {/* Identity Card Field */}
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="identityCard">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="identityCard"
+                    >
                       Identity Card
                     </label>
                     <input
-                      className={`w-full rounded border ${errors.identityCard ? 'border-red-500' : 'border-stroke'} bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      className={`w-full rounded border ${
+                        errors.identityCard ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
                       type="text"
                       id="identityCard"
                       placeholder="ID12345678"
                       value={identityCard}
                       onChange={(e) => setIdentityCard(e.target.value)}
                     />
-                    {errors.identityCard && <p className="text-red-500 text-sm">{errors.identityCard}</p>}
+                    {errors.identityCard && (
+                      <p className="text-red-500 text-sm">
+                        {errors.identityCard}
+                      </p>
+                    )}
                   </div>
 
                   {/* Birthday Field */}
                   <div className="mb-5.5">
-                    <label className="mb-3 block text-sm font-medium text-black dark:text-white" htmlFor="birthday">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="birthday"
+                    >
                       Birthday
                     </label>
                     <input
@@ -284,6 +363,32 @@ const AddUser: React.FC = () => {
                     />
                   </div>
 
+                  {/* Description Field */}
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="description"
+                    >
+                      Description
+                    </label>
+                    <textarea
+                      className={`w-full rounded border ${
+                        errors.description ? 'border-red-500' : 'border-stroke'
+                      } bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary`}
+                      id="description"
+                      placeholder="Short description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={6}
+                      style={{ resize: 'vertical' }}
+                    />
+                    {errors.description && (
+                      <p className="text-red-500 text-sm">
+                        {errors.description}
+                      </p>
+                    )}
+                  </div>
+
                   {/* Submit Button */}
                   <button
                     type="submit"
@@ -292,7 +397,9 @@ const AddUser: React.FC = () => {
                     Add User
                   </button>
                 </form>
-                {errorMessage && <p className="text-red-500 mt-4 text-sm">{errorMessage}</p>}
+                {errorMessage && (
+                  <p className="text-red-500 mt-4 text-sm">{errorMessage}</p>
+                )}
               </div>
             </div>
           </div>
@@ -301,7 +408,9 @@ const AddUser: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
-                <h3 className="font-medium text-black dark:text-white">User Roles</h3>
+                <h3 className="font-medium text-black dark:text-white">
+                  User Roles
+                </h3>
               </div>
               <div className="p-7">
                 <label className="mb-3 block text-sm font-medium text-black dark:text-white">

@@ -19,6 +19,8 @@ import DefaultLayout from './layout/DefaultLayout';
 import UserDetail from './pages/Users/UserDetail';
 import { useEffect, useState } from 'react';
 import AddUser from './pages/Users/AddUser';
+import ContractDetail from './components/Contract/ContractDetail';
+import AddContract from './components/Contract/AddContract';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -48,6 +50,12 @@ function App() {
                 </>
               }
             />
+            <Route path="/contract-detail/:id" element={<ContractDetail />} />
+            <Route
+              path="/add-contract/:userId"
+              element={<AddContract />}
+            />{' '}
+            {/* Add this route */}
             <Route path="/add-user" element={<AddUser />} />
             <Route
               index

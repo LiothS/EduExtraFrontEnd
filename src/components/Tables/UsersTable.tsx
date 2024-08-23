@@ -121,11 +121,11 @@ const UsersList: React.FC = () => {
               onChange={(e) => setFilterType(e.target.value)}
               className="border border-stroke rounded-md py-2 px-4 dark:bg-boxdark dark:border-strokedark"
             >
-              <option value="fullName">Full Name</option>
+              <option value="fullName">Họ tên</option>
               <option value="email">Email</option>
-              <option value="phone">Phone</option>
-              <option value="address">Address</option>
-              <option value="nickname">Nickname</option>
+              <option value="phone">Số điện thoại </option>
+              <option value="address">Địa chỉ</option>
+              <option value="nickname">Tên rút gọn</option>
             </select>
 
             <input
@@ -141,14 +141,14 @@ const UsersList: React.FC = () => {
               onClick={handleSearch}
               className="bg-primary text-white rounded-md py-2 px-4 hover:bg-primary-dark focus:outline-none"
             >
-              Search
+              Tìm
             </button>
             {isAdmin && (
               <button
                 onClick={handleAddUser}
                 className="bg-primary text-white rounded-md py-2 px-4 hover:bg-primary-dark focus:outline-none"
               >
-                Add User
+                Thêm nhân viên
               </button>
             )}
           </div>
@@ -164,13 +164,13 @@ const UsersList: React.FC = () => {
               <p className="font-medium truncate">Họ Tên</p>
             </div>
             <div className="flex items-center px-4 py-2">
-              <p className="font-medium truncate">SDT</p>
+              <p className="font-medium truncate">Số Điện Thoại</p>
             </div>
             <div className="flex items-center px-4 py-2">
               <p className="font-medium truncate">Email</p>
             </div>
             <div className="flex items-center px-4 py-2">
-              <p className="font-medium truncate">Trạng thái</p>
+              <p className="font-medium truncate">Trạng Thái</p>
             </div>
           </div>
 

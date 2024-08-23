@@ -2,17 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Breadcrumb from '../../components/Breadcrumbs/Breadcrumb';
 import defaultProfileImg from '../../images/user/user-03.png';
-import { User, Role } from '../../types/common'; // Import User and Role types
+import { User } from '../../types/common'; // Import User and Role types
 import { config } from '../../common/config';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/UserStore';
 import { toast, ToastContainer } from 'react-toastify';
-import { setUser, updateUser } from '../../redux/UserSlice';
+import { updateUser } from '../../redux/UserSlice';
 import ContractsTab from '../../components/Contract/ContractsTab';
 
 const accountContent = <div>Account Content</div>;
 
 const rolesList = ['MANAGER', 'ADMIN', 'ACCOUNTANT', 'TEACHER'];
+const roleTranslations: { [key: string]: string } = {
+  MANAGER: 'Quản lý',
+  ADMIN: 'Quản trị viên',
+  ACCOUNTANT: 'Kế toán',
+  TEACHER: 'Giáo viên',
+};
 
 const UserDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,9 +31,12 @@ const UserDetail: React.FC = () => {
   const [formData, setFormData] = useState<User | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [isActive, setIsActive] = useState<boolean>(false);
-  const [enabled, setEnabled] = useState<boolean>(false);
+  const [] = useState<boolean>(false);
   // For role management
-  const [, setSelectedRoles] = useState<Set<string>>(new Set());
+  const [] = useState<Set<string>>(new Set());
+  const [description, setDescription] = useState<string | ''>(
+    apiUser?.description || '',
+  );
 
   // Get the global user from Redux
   const globalUser = useSelector((state: RootState) => state.user.user);
@@ -59,6 +68,7 @@ const UserDetail: React.FC = () => {
         const roleNames: string[] = userData.roles.map((role) => role.roleName);
         setRoles(roleNames);
         setIsActive(userData.active);
+        setDescription(userData.description);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -109,11 +119,11 @@ const UserDetail: React.FC = () => {
         );
 
         if (!imageResponse.ok) {
-          throw new Error('Failed to update profile image');
+          throw new Error('Không thể đăng ảnh');
         }
       } catch (error) {
         console.log('error:', error);
-        toast.error('Cannot update image');
+        toast.error('Không thể đăng ảnh');
         return;
       }
     }
@@ -130,6 +140,7 @@ const UserDetail: React.FC = () => {
       identityCard: formData?.identityCard || apiUser?.identityCard,
       active: isActive,
       roles: roles.length > 0 ? roles : null,
+      description: description || apiUser?.description,
     };
 
     try {
@@ -152,9 +163,13 @@ const UserDetail: React.FC = () => {
       if (globalUser?.id === apiUser?.id) {
         dispatch(updateUser(updatedUser));
       }
-      toast.success('Changes saved successfully');
+      toast.success('Lưu thành công', {
+        autoClose: 500,
+      });
     } catch (error) {
-      toast.error('Update failed');
+      toast.error('Lưu thất bại', {
+        autoClose: 500,
+      });
     }
   };
 
@@ -191,7 +206,7 @@ const UserDetail: React.FC = () => {
   return (
     <>
       <div className="mx-auto max-w-4xl px-4">
-        <Breadcrumb pageName="UserDetail" />
+        <Breadcrumb pageName="Thông tin nhân viên" />
 
         <div className="bg-white shadow-md rounded-lg p-4">
           {/* Tabs Navigation */}
@@ -204,28 +219,32 @@ const UserDetail: React.FC = () => {
                   : 'text-gray-600'
               } focus:outline-none`}
             >
-              User Info
+              Thông tin
             </button>
-            <button
-              onClick={() => setActiveTab('contracts')}
-              className={`py-2 px-4 text-sm font-medium ${
-                activeTab === 'contracts'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600'
-              } focus:outline-none`}
-            >
-              Contracts
-            </button>
-            <button
-              onClick={() => setActiveTab('account')}
-              className={`py-2 px-4 text-sm font-medium ${
-                activeTab === 'account'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600'
-              } focus:outline-none`}
-            >
-              Account
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setActiveTab('contracts')}
+                className={`py-2 px-4 text-sm font-medium ${
+                  activeTab === 'contracts'
+                    ? 'border-b-2 border-primary text-primary'
+                    : 'text-gray-600'
+                } focus:outline-none`}
+              >
+                Hợp đồng
+              </button>
+            )}
+            {canEdit && (
+              <button
+                onClick={() => setActiveTab('account')}
+                className={`py-2 px-4 text-sm font-medium ${
+                  activeTab === 'account'
+                    ? 'border-b-2 border-primary text-primary'
+                    : 'text-gray-600'
+                } focus:outline-none`}
+              >
+                Tài khoản
+              </button>
+            )}
           </div>
 
           {/* Tabs Content */}
@@ -257,7 +276,7 @@ const UserDetail: React.FC = () => {
                           !canEdit ? 'cursor-not-allowed opacity-50' : ''
                         }`}
                       >
-                        Choose File
+                        Chọn ảnh
                       </label>
                       {imageFile && (
                         <button
@@ -275,11 +294,6 @@ const UserDetail: React.FC = () => {
 
                   {/* Personal Information Form */}
                   <div>
-                    <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
-                      <h3 className="font-medium text-black dark:text-white">
-                        Personal Information
-                      </h3>
-                    </div>
                     <div className="p-7">
                       <form
                         action="#"
@@ -295,7 +309,7 @@ const UserDetail: React.FC = () => {
                               className="mb-3 block text-sm font-medium text-black dark:text-white"
                               htmlFor="fullName"
                             >
-                              Full Name
+                              Họ tên
                             </label>
                             <input
                               className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -304,7 +318,7 @@ const UserDetail: React.FC = () => {
                               type="text"
                               name="fullName"
                               id="fullName"
-                              placeholder="Devid Jhon"
+                              placeholder="Trần Văn A"
                               defaultValue={apiUser.fullName}
                               disabled={!canEdit}
                               onChange={(e) =>
@@ -321,7 +335,7 @@ const UserDetail: React.FC = () => {
                               className="mb-3 block text-sm font-medium text-black dark:text-white"
                               htmlFor="nickname"
                             >
-                              Nickname
+                              Tên rút gọn
                             </label>
                             <input
                               className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -330,7 +344,7 @@ const UserDetail: React.FC = () => {
                               type="text"
                               name="nickname"
                               id="nickname"
-                              placeholder="Dave"
+                              placeholder="Thầy A"
                               defaultValue={apiUser.nickname}
                               disabled={!canEdit}
                               onChange={(e) =>
@@ -349,7 +363,7 @@ const UserDetail: React.FC = () => {
                               className="mb-3 block text-sm font-medium text-black dark:text-white"
                               htmlFor="phoneNumber"
                             >
-                              Phone Number
+                              Số điện thoại
                             </label>
                             <input
                               className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -358,7 +372,7 @@ const UserDetail: React.FC = () => {
                               type="text"
                               name="phoneNumber"
                               id="phoneNumber"
-                              placeholder="+990 3343 7865"
+                              placeholder="Nhập số điện thoại"
                               defaultValue={apiUser.phone}
                               disabled={!canEdit}
                               onChange={(e) =>
@@ -375,7 +389,7 @@ const UserDetail: React.FC = () => {
                               className="mb-3 block text-sm font-medium text-black dark:text-white"
                               htmlFor="emailAddress"
                             >
-                              Email Address
+                              Email
                             </label>
                             <input
                               className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -384,7 +398,7 @@ const UserDetail: React.FC = () => {
                               type="email"
                               name="emailAddress"
                               id="emailAddress"
-                              placeholder="devidjond45@gmail.com"
+                              placeholder="Nhập địa chỉ email"
                               defaultValue={apiUser.email}
                               disabled={!canEdit}
                               onChange={(e) =>
@@ -403,7 +417,7 @@ const UserDetail: React.FC = () => {
                               className="mb-3 block text-sm font-medium text-black dark:text-white"
                               htmlFor="birthday"
                             >
-                              Birthday
+                              Ngày sinh
                             </label>
                             <input
                               className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -428,7 +442,7 @@ const UserDetail: React.FC = () => {
                               className="mb-3 block text-sm font-medium text-black dark:text-white"
                               htmlFor="identityCard"
                             >
-                              Identity Card
+                              CCCD/CMDN
                             </label>
                             <input
                               className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -437,7 +451,7 @@ const UserDetail: React.FC = () => {
                               type="text"
                               name="identityCard"
                               id="identityCard"
-                              placeholder="ID123456789"
+                              placeholder="823491239232"
                               defaultValue={apiUser.identityCard}
                               disabled={!canEdit}
                               onChange={(e) =>
@@ -455,7 +469,7 @@ const UserDetail: React.FC = () => {
                             className="mb-3 block text-sm font-medium text-black dark:text-white"
                             htmlFor="address"
                           >
-                            Address
+                            Địa chỉ
                           </label>
                           <input
                             className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -464,7 +478,7 @@ const UserDetail: React.FC = () => {
                             type="text"
                             name="address"
                             id="address"
-                            placeholder="1234 Elm Street"
+                            placeholder="Số nhà, Ấp, Xã, Huyện, Tỉnh"
                             defaultValue={apiUser.address}
                             disabled={!canEdit}
                             onChange={(e) =>
@@ -473,6 +487,34 @@ const UserDetail: React.FC = () => {
                                 address: e.target.value,
                               })
                             }
+                          />
+                        </div>
+
+                        {/* Description Field */}
+                        <div className="mb-5.5">
+                          <label
+                            className="mb-3 block text-sm font-medium text-black dark:text-white"
+                            htmlFor="description"
+                          >
+                            Mô tả (nếu có)
+                          </label>
+                          <textarea
+                            rows={6}
+                            className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
+                              !canEdit ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
+                            name="description"
+                            id="description"
+                            placeholder="..."
+                            value={description ?? ''}
+                            disabled={!canEdit}
+                            onChange={(e) => {
+                              setDescription(e.target.value);
+                              setFormData({
+                                ...apiUser,
+                                description: e.target.value,
+                              });
+                            }}
                           />
                         </div>
                         {/* Toggle Switch */}
@@ -486,7 +528,7 @@ const UserDetail: React.FC = () => {
                             className="flex cursor-pointer select-none items-center space-x-3" // Added space-x-3 for horizontal spacing
                           >
                             <span className="text-sm font-medium text-black dark:text-white">
-                              Status
+                              Trạng thái
                             </span>
                             <div className="relative">
                               <input
@@ -510,7 +552,7 @@ const UserDetail: React.FC = () => {
                         {/* Role Selection */}
                         <div className="mb-5.5">
                           <label className="mb-3 block text-sm font-medium text-black dark:text-white">
-                            Roles
+                            Quyền
                           </label>
                           <div className="flex flex-wrap gap-4">
                             {rolesList.map((role) => (
@@ -528,7 +570,7 @@ const UserDetail: React.FC = () => {
                                   className="ml-2"
                                   htmlFor={`role-${role}`}
                                 >
-                                  {role}
+                                  {roleTranslations[role]}
                                 </label>
                               </div>
                             ))}
@@ -542,7 +584,7 @@ const UserDetail: React.FC = () => {
                             }`}
                             disabled={!canEdit}
                           >
-                            Save Changes
+                            Lưu
                           </button>
                         </div>
                       </form>

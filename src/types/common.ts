@@ -13,6 +13,7 @@ export interface User {
   phone: string;
   address: string;
   nickname: string;
+  description: string;
   birthday: string; // Keep as string if your backend uses ISO date strings
   image: string;
   identityCard: string;
@@ -45,6 +46,8 @@ export interface Contract {
   terminatedBy: string | null;
   terminatedDate: string | null;
   course: Course[];
+  employeeName: string;
+  employeeIdentity: string;
 }
 
 export interface ContractsResponse {

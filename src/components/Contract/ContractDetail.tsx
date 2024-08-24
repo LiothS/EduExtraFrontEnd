@@ -21,7 +21,7 @@ const ContractDetail: React.FC = () => {
           },
         });
         if (!response.ok) {
-          throw new Error('Failed to fetch contract details');
+          throw new Error('Bạn không có quyền xem hợp đồng của nhân viên khác');
         }
         const contractData: Contract = await response.json();
         setContract(contractData);

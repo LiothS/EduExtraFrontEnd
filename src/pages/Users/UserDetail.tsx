@@ -9,6 +9,9 @@ import { RootState } from '../../redux/UserStore';
 import { toast, ToastContainer } from 'react-toastify';
 import { updateUser } from '../../redux/UserSlice';
 import ContractsTab from '../../components/Contract/ContractsTab';
+import AccountManagement from '../../components/Accounts/AccountManagement';
+import PasswordManagement from '../../components/Accounts/PasswordManagement';
+import BankAccountsManagement from '../../components/Accounts/BankAccountsManagement';
 
 const accountContent = <div>Account Content</div>;
 
@@ -221,7 +224,7 @@ const UserDetail: React.FC = () => {
             >
               Thông tin
             </button>
-            {canEdit && (
+            {
               <button
                 onClick={() => setActiveTab('contracts')}
                 className={`py-2 px-4 text-sm font-medium ${
@@ -232,8 +235,8 @@ const UserDetail: React.FC = () => {
               >
                 Hợp đồng
               </button>
-            )}
-            {canEdit && (
+            }
+            {
               <button
                 onClick={() => setActiveTab('account')}
                 className={`py-2 px-4 text-sm font-medium ${
@@ -244,7 +247,19 @@ const UserDetail: React.FC = () => {
               >
                 Tài khoản
               </button>
-            )}
+            }
+            {
+              <button
+                onClick={() => setActiveTab('bank')}
+                className={`py-2 px-4 text-sm font-medium ${
+                  activeTab === 'bank'
+                    ? 'border-b-2 border-primary text-primary'
+                    : 'text-gray-600'
+                } focus:outline-none`}
+              >
+                Thanh toán
+              </button>
+            }
           </div>
 
           {/* Tabs Content */}
@@ -442,7 +457,7 @@ const UserDetail: React.FC = () => {
                               className="mb-3 block text-sm font-medium text-black dark:text-white"
                               htmlFor="identityCard"
                             >
-                              CCCD/CMDN
+                              CCCD/CMND
                             </label>
                             <input
                               className={`w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary ${
@@ -596,7 +611,15 @@ const UserDetail: React.FC = () => {
             {activeTab === 'contracts' && apiUser && (
               <ContractsTab userId={apiUser.id} />
             )}
-            {activeTab === 'account' && accountContent}
+            {activeTab === 'account' && apiUser && (
+              <PasswordManagement
+                userId={apiUser.id}
+                username={apiUser.username}
+              />
+            )}
+            {activeTab === 'bank' && apiUser && (
+              <BankAccountsManagement userId={apiUser.id} />
+            )}
           </div>
         </div>
       </div>

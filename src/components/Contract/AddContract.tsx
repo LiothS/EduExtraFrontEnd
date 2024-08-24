@@ -104,7 +104,9 @@ const AddContract: React.FC = () => {
           autoClose: 500,
         });
         // Go back to the previous page after success
-        navigate(-1);
+        setTimeout(() => {
+          navigate(-1);
+        }, 3000);
       } else {
         throw new Error('Failed to add contract');
       }

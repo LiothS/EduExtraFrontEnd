@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import AddUser from './pages/Users/AddUser';
 import ContractDetail from './components/Contract/ContractDetail';
 import AddContract from './components/Contract/AddContract';
+import CoursesTable from './components/Tables/CoursesTable';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -56,6 +57,7 @@ function App() {
               element={<AddContract />}
             />{' '}
             {/* Add this route */}
+            <Route path="/courses" element={<CoursesTable />} />
             <Route path="/add-user" element={<AddUser />} />
             <Route
               index

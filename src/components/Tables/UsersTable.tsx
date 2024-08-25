@@ -189,7 +189,7 @@ const UsersList: React.FC = () => {
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <p className="ml-4 text-sm text-black dark:text-white truncate">
-                  {user.fullName || 'Thien'}
+                  {user.fullName || ''}
                 </p>
               </div>
               <div className="flex items-center px-4 py-2">

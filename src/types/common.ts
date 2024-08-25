@@ -24,13 +24,6 @@ export interface User {
   updatedDate: string; // Added based on JSON response
 }
 
-export interface Course {
-  id: number;
-  name: string;
-  contractId: number;
-  userId: number;
-}
-
 export interface Contract {
   id: number;
   name: string;
@@ -77,4 +70,25 @@ export interface ContractsResponse {
   };
   numberOfElements: number;
   empty: boolean;
+}
+export interface Course {
+  id: number;
+  name: string;
+  courseCode: string;
+  description: string;
+  price: number;
+  studentLimit: number;
+  startDate: string;
+  schedule: Array<{
+    dayOfWeek: string;
+    start: string;
+    end: string;
+  }>;
+  active: boolean;
+  room: string;
+  owner: string;
+  categoryName: string;
+  contractId: number | null;
+  categoryId: number;
+  userId: number;
 }

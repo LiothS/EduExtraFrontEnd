@@ -92,3 +92,13 @@ export interface Course {
   categoryId: number;
   userId: number;
 }
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  createdDate: string; // or Date if you prefer handling dates as Date objects
+  updatedDate?: string; // or Date if you prefer handling dates as Date objects
+  createdBy?: string;
+  updatedBy?: string;
+}

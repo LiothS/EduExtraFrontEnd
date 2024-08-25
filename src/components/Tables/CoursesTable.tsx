@@ -1,21 +1,53 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { config } from '../../common/config';
-import { Course } from '../../types/common';
+import { Course, Category } from '../../types/common';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const CoursePage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [pageSize] = useState<number>(10);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${config.apiBaseUrl}/categories`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        setCategories(data.content);
+      } catch (error: any) {
+        console.error('Error fetching categories:', error.message);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
     const fetchCourses = async () => {
       try {
+        // Build the URL based on whether a category is selected
+        const categoryParam =
+          selectedCategory !== null ? `category/${selectedCategory}` : '';
         const response = await fetch(
-          `${config.apiBaseUrl}/courses?page=${currentPage}&size=${pageSize}&sort=createdDate,desc`,
+          `${config.apiBaseUrl}/courses${
+            categoryParam ? `/${categoryParam}` : ''
+          }?page=${currentPage}&size=${pageSize}&sort=createdDate,desc`,
           {
             method: 'GET',
             headers: {
@@ -38,7 +70,7 @@ const CoursePage: React.FC = () => {
     };
 
     fetchCourses();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, selectedCategory]);
 
   const handleRowClick = (courseId: number) => {
     navigate(`/course-detail/${courseId}`);
@@ -56,12 +88,38 @@ const CoursePage: React.FC = () => {
     }
   };
 
+  const handleCategoryChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const categoryId = event.target.value ? Number(event.target.value) : null;
+    setSelectedCategory(categoryId);
+    setCurrentPage(1); // Reset to the first page when changing categories
+  };
+
   return (
     <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       <div className="py-6 px-4 md:px-6 xl:px-7.5">
         <h4 className="text-xl font-semibold text-black dark:text-white">
           Danh sách khoá học
         </h4>
+        <div className="py-4">
+          <label htmlFor="category" className="mr-2 text-black dark:text-white">
+            Tất cả danh mục:
+          </label>
+          <select
+            id="category"
+            value={selectedCategory !== null ? selectedCategory : ''}
+            onChange={handleCategoryChange}
+            className="p-2 border border-stroke rounded bg-white dark:bg-boxdark dark:border-strokedark"
+          >
+            <option value="">Tất cả</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="overflow-x-auto">

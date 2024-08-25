@@ -104,13 +104,13 @@ const CoursePage: React.FC = () => {
         </h4>
         <div className="py-4">
           <label htmlFor="category" className="mr-2 text-black dark:text-white">
-            Tất cả danh mục:
+            Phân loại:
           </label>
           <select
             id="category"
             value={selectedCategory !== null ? selectedCategory : ''}
             onChange={handleCategoryChange}
-            className="p-2 border border-stroke rounded bg-white dark:bg-boxdark dark:border-strokedark"
+            className="border border-stroke rounded-md py-2 px-4 dark:bg-boxdark dark:border-strokedark"
           >
             <option value="">Tất cả</option>
             {categories.map((category) => (

@@ -15,6 +15,12 @@ const daysOfWeek = [
   { value: 'SUNDAY', label: 'Chủ Nhật' },
 ];
 
+const formatTime = (time: string) => {
+  // Ensure the time is in HH:MM format and convert to HH:MM:SS
+  const [hours, minutes] = time.split(':');
+  return `${hours}:${minutes}:00`;
+};
+
 const AddCourse: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
   const [name, setName] = useState('');
@@ -26,7 +32,9 @@ const AddCourse: React.FC = () => {
     { dayOfWeek: string; start: string; end: string }[]
   >([]);
   const [room, setRoom] = useState('');
-  const [owner, setOwner] = useState('');
+  const [ownerId, setOwnerId] = useState<number | null>(null);
+  const [ownerFullName, setOwnerFullName] = useState<string>('');
+
   const [categories, setCategories] = useState<{ id: number; name: string }[]>(
     [],
   );
@@ -85,8 +93,9 @@ const AddCourse: React.FC = () => {
     setSchedule(updatedSchedule);
   };
 
-  const handleOwnerSelection = (selectedOwner: string) => {
-    setOwner(selectedOwner);
+  const handleOwnerSelection = (userId: number, fullName: string) => {
+    setOwnerId(userId);
+    setOwnerFullName(fullName);
     setShowOwnerPopup(false);
   };
 
@@ -137,6 +146,16 @@ const AddCourse: React.FC = () => {
     setLoading(true);
 
     try {
+      // Format the schedule times
+      const formattedSchedule = schedule.map((item) => ({
+        ...item,
+        start: formatTime(item.start),
+        end: formatTime(item.end),
+      }));
+
+      // Format the startDate to include time
+      const formattedStartDate = `${startDate}T00:00:00`; // Default time to 00:00:00
+
       const response = await fetch(`${config.apiBaseUrl}/courses`, {
         method: 'POST',
         headers: {
@@ -148,10 +167,10 @@ const AddCourse: React.FC = () => {
           description,
           price: Number(price),
           studentLimit: Number(studentLimit),
-          startDate,
-          schedule,
+          startDate: formattedStartDate, // Use the formatted startDate here
+          schedule: formattedSchedule,
           room,
-          owner,
+          userId: ownerId,
           categoryId: selectedCategory,
         }),
       });
@@ -162,7 +181,7 @@ const AddCourse: React.FC = () => {
         });
         setTimeout(() => {
           navigate('/courses'); // Redirect to course list or another page
-        }, 3000);
+        }, 1000);
       } else {
         throw new Error('Failed to add course');
       }
@@ -172,6 +191,12 @@ const AddCourse: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // Prevent form submission on Enter key press
     }
   };
 
@@ -190,7 +215,11 @@ const AddCourse: React.FC = () => {
           <div className="pt-4">
             <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="p-7">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-6"
+                  onKeyDown={handleKeyDown}
+                >
                   {/* Course Name Field */}
                   <div className="mb-5.5">
                     <label
@@ -221,11 +250,10 @@ const AddCourse: React.FC = () => {
                       id="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      rows={4}
                     />
                   </div>
 
-                  {/* Price, Student Limit, and Room Fields */}
+                  {/* Price and Student Limit Fields */}
                   <div className="mb-5.5 flex gap-4">
                     <div className="w-1/3">
                       <label
@@ -396,22 +424,23 @@ const AddCourse: React.FC = () => {
                       className="mb-3 block text-sm font-medium text-black dark:text-white"
                       htmlFor="owner"
                     >
-                      Chủ sở hữu
+                      Chọn giảng viên
                     </label>
                     <div className="flex items-center">
                       <input
-                        className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                        className="w-64 rounded border border-stroke bg-gray py-3 px-4 text-black focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white"
                         type="text"
                         id="owner"
-                        value={owner}
+                        value={ownerFullName || 'Chọn giảng viên...'}
                         readOnly
                       />
+
                       <button
                         type="button"
                         className="ml-2 rounded bg-blue-500 py-2 px-4 text-white hover:bg-blue-600"
                         onClick={() => setShowOwnerPopup(true)}
                       >
-                        Chọn người dùng
+                        Chọn giảng viên
                       </button>
                     </div>
                   </div>
@@ -431,7 +460,7 @@ const AddCourse: React.FC = () => {
                       }`}
                       disabled={loading}
                     >
-                      {loading ? 'Adding...' : 'Add Course'}
+                      {loading ? 'Đang tạo...' : 'Tạo lớp'}
                     </button>
                   </div>
                 </form>

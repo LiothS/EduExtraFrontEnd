@@ -433,15 +433,8 @@ const AddCourse: React.FC = () => {
                         id="owner"
                         value={ownerFullName || 'Chọn giảng viên...'}
                         readOnly
-                      />
-
-                      <button
-                        type="button"
-                        className="ml-2 rounded bg-blue-500 py-2 px-4 text-white hover:bg-blue-600"
                         onClick={() => setShowOwnerPopup(true)}
-                      >
-                        Chọn giảng viên
-                      </button>
+                      />
                     </div>
                   </div>
 

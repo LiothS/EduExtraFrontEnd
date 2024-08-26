@@ -132,7 +132,7 @@ const AddContract: React.FC = () => {
           </div>
 
           <div className="pt-4">
-            <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+            <div className="rounded-lg bg-white dark:border-strokedark dark:bg-boxdark">
               <div className="p-7">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Contract Type Field */}

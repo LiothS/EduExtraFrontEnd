@@ -11,6 +11,7 @@ const CoursePage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [pageSize] = useState<number>(10);
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,39 +39,41 @@ const CoursePage: React.FC = () => {
     fetchCategories();
   }, []);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        // Build the URL based on whether a category is selected
-        const categoryParam =
-          selectedCategory !== null ? `category/${selectedCategory}` : '';
-        const response = await fetch(
-          `${config.apiBaseUrl}/courses${
-            categoryParam ? `/${categoryParam}` : ''
-          }?page=${currentPage}&size=${pageSize}&sort=createdDate,desc`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        );
+  const fetchCourses = async () => {
+    try {
+      let url = `${config.apiBaseUrl}/courses?page=${currentPage}&size=${pageSize}&sort=createdDate,desc`;
 
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        setCourses(data.content);
-        setTotalPages(data.totalPages);
-      } catch (error: any) {
-        console.error('Error fetching courses:', error.message);
+      if (searchKeyword) {
+        url = `${config.apiBaseUrl}/courses/search?keyword=${encodeURIComponent(
+          searchKeyword,
+        )}&page=${currentPage}&size=${pageSize}&sort=createdDate,desc`;
+      } else if (selectedCategory !== null) {
+        url = `${config.apiBaseUrl}/courses/category/${selectedCategory}?page=${currentPage}&size=${pageSize}&sort=createdDate,desc`;
       }
-    };
 
-    fetchCourses();
-  }, [currentPage, pageSize, selectedCategory]);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      setCourses(data.content);
+      setTotalPages(data.totalPages);
+    } catch (error: any) {
+      console.error('Error fetching courses:', error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses(); // Fetch courses when page or filters change
+  }, [currentPage, selectedCategory, searchKeyword]);
 
   const handleRowClick = (courseId: number) => {
     navigate(`/course-detail/${courseId}`);
@@ -96,29 +99,74 @@ const CoursePage: React.FC = () => {
     setCurrentPage(1); // Reset to the first page when changing categories
   };
 
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(event.target.value);
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1); // Reset to the first page when searching
+    fetchCourses();
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleAddCourse = () => {
+    navigate('/course-add');
+  };
+
   return (
     <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       <div className="py-6 px-4 md:px-6 xl:px-7.5">
         <h4 className="text-xl font-semibold text-black dark:text-white">
-          Danh sách khoá học
+          Danh sách khóa học
         </h4>
-        <div className="py-4">
-          <label htmlFor="category" className="mr-2 text-black dark:text-white">
-            Phân loại:
-          </label>
-          <select
-            id="category"
-            value={selectedCategory !== null ? selectedCategory : ''}
-            onChange={handleCategoryChange}
-            className="border border-stroke rounded-md py-2 px-4 dark:bg-boxdark dark:border-strokedark"
-          >
-            <option value="">Tất cả</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+        <div className="py-4 flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="flex items-center gap-4">
+            <label htmlFor="category" className="text-black dark:text-white">
+              Phân loại:
+            </label>
+            <select
+              id="category"
+              value={selectedCategory !== null ? selectedCategory : ''}
+              onChange={handleCategoryChange}
+              className="border border-stroke rounded-md py-2 px-4 dark:bg-boxdark dark:border-strokedark"
+            >
+              <option value="">Tất cả</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center space-x-4 py-4">
+            <input
+              type="text"
+              placeholder="Tìm theo Tên hoặc Mã lớp..."
+              value={searchKeyword}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyPress}
+              className="border border-stroke rounded-md py-2 px-4 dark:bg-boxdark dark:border-strokedark flex-1"
+              style={{ minWidth: '300px' }}
+            />
+            <button
+              onClick={handleSearch}
+              className="rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark"
+            >
+              Tìm
+            </button>
+            <button
+              onClick={handleAddCourse}
+              className="rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark"
+            >
+              Thêm lớp
+            </button>
+          </div>
         </div>
       </div>
 

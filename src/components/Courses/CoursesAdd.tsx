@@ -203,12 +203,12 @@ const AddCourse: React.FC = () => {
   return (
     <>
       <div className="mx-auto max-w-4xl px-4">
-        <Breadcrumb pageName="Khóa Học" />
+        <Breadcrumb pageName="Lớp Học" />
 
         <div className="bg-white shadow-md rounded-lg p-4">
           <div className="border-b border-stroke pb-4">
             <h1 className="text-xl font-medium text-black dark:text-white">
-              Tạo khóa học mới
+              Tạo lớp học mới
             </h1>
           </div>
 
@@ -226,7 +226,7 @@ const AddCourse: React.FC = () => {
                       className="mb-3 block text-sm font-medium text-black dark:text-white"
                       htmlFor="name"
                     >
-                      Tên khóa học
+                      Tên lớp học
                     </label>
                     <input
                       className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
@@ -260,7 +260,7 @@ const AddCourse: React.FC = () => {
                         className="mb-3 block text-sm font-medium text-black dark:text-white"
                         htmlFor="price"
                       >
-                        Giá
+                        Học phí
                       </label>
                       <input
                         className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
@@ -428,10 +428,10 @@ const AddCourse: React.FC = () => {
                     </label>
                     <div className="flex items-center">
                       <input
-                        className="w-64 rounded border border-stroke bg-gray py-3 px-4 text-black focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                        className="w-full rounded border border-stroke bg-gray py-3 px-4 text-black focus:border-primary dark:border-strokedark dark:bg-meta-4 dark:text-white"
                         type="text"
                         id="owner"
-                        value={ownerFullName || 'Chọn giảng viên...'}
+                        value={ownerFullName || 'Chọn giảng viên tại đây...'}
                         readOnly
                         onClick={() => setShowOwnerPopup(true)}
                       />

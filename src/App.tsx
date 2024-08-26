@@ -23,6 +23,7 @@ import ContractDetail from './components/Contract/ContractDetail';
 import AddContract from './components/Contract/AddContract';
 import CoursesTable from './components/Tables/CoursesTable';
 import CourseAddPage from './components/Courses/CoursesAdd';
+import CourseDetail from './components/Courses/CourseDetail';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -52,6 +53,7 @@ function App() {
                 </>
               }
             />
+            <Route path="/course-detail/:id" element={<CourseDetail />} />
             <Route path="/contract-detail/:id" element={<ContractDetail />} />
             <Route path="/course-add" element={<CourseAddPage />} />
             <Route

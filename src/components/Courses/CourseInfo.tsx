@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Course } from '../../types/common';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/UserStore'; // Adjust this path as needed
+import { Course, User } from '../../types/common';
 import { config } from '../../common/config'; // Adjust this path as needed
 import { ToastContainer, toast } from 'react-toastify';
+import OwnerSelectorPopup from './OwnerSelectorPopup'; // Import the popup component
 
 interface CourseInfoProps {
   courseId: number;
 }
+
 const dayOfWeekMap: { [key: string]: string } = {
   MONDAY: 'Thứ Hai',
   TUESDAY: 'Thứ Ba',
@@ -15,13 +19,36 @@ const dayOfWeekMap: { [key: string]: string } = {
   SATURDAY: 'Thứ Bảy',
   SUNDAY: 'Chủ Nhật',
 };
+
+const daysOfWeek = [
+  { value: 'MONDAY', label: 'Thứ Hai' },
+  { value: 'TUESDAY', label: 'Thứ Ba' },
+  { value: 'WEDNESDAY', label: 'Thứ Tư' },
+  { value: 'THURSDAY', label: 'Thứ Năm' },
+  { value: 'FRIDAY', label: 'Thứ Sáu' },
+  { value: 'SATURDAY', label: 'Thứ Bảy' },
+  { value: 'SUNDAY', label: 'Chủ Nhật' },
+];
+
 const CourseInfo: React.FC<CourseInfoProps> = ({ courseId }) => {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<
+    { dayOfWeek: string; start: string; end: string }[]
+  >([]);
+  const [showOwnerPopup, setShowOwnerPopup] = useState<boolean>(false);
+  const [selectedOwner, setSelectedOwner] = useState<{
+    userId: number;
+    fullName: string;
+  } | null>(null);
 
-  const apiEndpoint = `${config.apiBaseUrl}/courses/${courseId}`; // Adjust API endpoint
-  const token = sessionStorage.getItem('token'); // Adjust token if needed
+  const globalUser = useSelector((state: RootState) => state.user.user);
+  const isAdmin =
+    globalUser && globalUser.roles.some((role) => role.roleName === 'ADMIN');
+
+  const apiEndpoint = `${config.apiBaseUrl}/courses/${courseId}`;
+  const token = sessionStorage.getItem('token');
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -40,6 +67,8 @@ const CourseInfo: React.FC<CourseInfoProps> = ({ courseId }) => {
 
         const data: Course = await response.json();
         setCourse(data);
+        setSchedule(data.schedule || []);
+        setSelectedOwner({ userId: data.userId, fullName: data.owner });
       } catch (error) {
         setError(
           error instanceof Error ? error.message : 'An unknown error occurred',
@@ -50,7 +79,83 @@ const CourseInfo: React.FC<CourseInfoProps> = ({ courseId }) => {
     };
 
     fetchCourseData();
-  }, []);
+  }, [apiEndpoint, token]);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    if (course) {
+      const { id, value } = e.target;
+      const newValue =
+        id === 'price' ? parseFloat(value.replace(/\D/g, '')) || 0 : value;
+      setCourse({ ...course, [id]: newValue });
+    }
+  };
+
+  const handleScheduleChange = (
+    index: number,
+    field: string,
+    value: string,
+  ) => {
+    setSchedule((prevSchedule) =>
+      prevSchedule.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item,
+      ),
+    );
+  };
+
+  const handleAddSchedule = () => {
+    setSchedule((prevSchedule) => [
+      ...prevSchedule,
+      { dayOfWeek: '', start: '', end: '' },
+    ]);
+  };
+
+  const handleRemoveSchedule = (index: number) => {
+    setSchedule((prevSchedule) => prevSchedule.filter((_, i) => i !== index));
+  };
+
+  const handleSave = async () => {
+    if (!course) {
+      toast.error('Không có gì để lưu');
+      return;
+    }
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...course,
+          schedule: schedule,
+          userId: selectedOwner?.userId, // Send the selected owner's userId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Display the error message from the response
+        toast.error(errorData.message || 'An unknown error occurred');
+        return;
+      }
+
+      const updatedCourse: Course = await response.json();
+      setCourse(updatedCourse);
+      toast.success('Lưu thành công');
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
+    }
+  };
+
+  const handleOwnerSelect = (userId: number, fullName: string) => {
+    setSelectedOwner({ userId, fullName });
+    setShowOwnerPopup(false); // Close the popup
+  };
 
   if (loading) {
     return <div>Đang tải dữ liệu...</div>;
@@ -68,198 +173,256 @@ const CourseInfo: React.FC<CourseInfoProps> = ({ courseId }) => {
     price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
   const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('vi-VN'); // Format to Vietnamese locale
+    new Date(date).toLocaleDateString('vi-VN');
 
   return (
     <div className="mx-auto max-w-4xl px-4">
-      <div className="">
-        <div className="pt-1">
-          <div>
-            <div className="p-2">
-              <form className="space-y-6">
-                {/* Course Code and Name Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="col-span-1">
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="courseCode"
-                    >
-                      Mã Lớp
-                    </label>
-                    <input
-                      className="w-full max-w-xs rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      type="text"
-                      id="courseCode"
-                      value={course.courseCode}
-                      readOnly
-                    />
-                  </div>
+      <div className="pt-1">
+        <div className="p-2">
+          <form className="space-y-6">
+            {/* Course Code, Category, and Name Fields */}
+            <div className="flex space-x-4">
+              <div className="flex-[2]">
+                <label
+                  className="mb-3 block text-sm font-medium text-black dark:text-white"
+                  htmlFor="courseCode"
+                >
+                  Mã Lớp
+                </label>
+                <input
+                  className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  type="text"
+                  id="courseCode"
+                  value={course.courseCode}
+                  onChange={handleInputChange} // Added onChange handler
+                  readOnly={true}
+                />
+              </div>
 
-                  <div className="col-span-2">
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="name"
-                    >
-                      Tên Lớp Học
-                    </label>
-                    <input
-                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      type="text"
-                      id="name"
-                      value={course.name}
-                      readOnly
-                    />
-                  </div>
-                </div>
+              <div className="flex-[3] overflow-x-auto">
+                <label
+                  className="mb-3 block text-sm font-medium text-black dark:text-white"
+                  htmlFor="category"
+                >
+                  Danh Mục
+                </label>
+                <input
+                  className="w-full min-w-[300px] rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  type="text"
+                  id="category"
+                  value={course.categoryName}
+                  onChange={handleInputChange} // Added onChange handler
+                  readOnly={true}
+                />
+              </div>
 
-                {/* Mô Tả Field */}
-                <div className="w-full">
-                  <label
-                    className="mb-3 block text-sm font-medium text-black dark:text-white"
-                    htmlFor="description"
-                  >
-                    Mô Tả
-                  </label>
-                  <textarea
-                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                    id="description"
-                    value={course.description}
-                    readOnly
-                    rows={4}
-                  />
-                </div>
-
-                {/* Price and Start Date Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="price"
-                    >
-                      Học Phí
-                    </label>
-                    <input
-                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      type="text"
-                      id="price"
-                      value={formatPrice(course.price)}
-                      readOnly
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="startDate"
-                    >
-                      Ngày Bắt Đầu
-                    </label>
-                    <input
-                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      type="text"
-                      id="startDate"
-                      value={formatDate(course.startDate)}
-                      readOnly
-                    />
-                  </div>
-                </div>
-
-                {/* Room and Owner Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="room"
-                    >
-                      Phòng
-                    </label>
-                    <input
-                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      type="text"
-                      id="room"
-                      value={course.room}
-                      readOnly
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      className="mb-3 block text-sm font-medium text-black dark:text-white"
-                      htmlFor="owner"
-                    >
-                      Người Đăng Ký
-                    </label>
-                    <input
-                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      type="text"
-                      id="owner"
-                      value={course.owner}
-                      readOnly
-                    />
-                  </div>
-                </div>
-
-                {/* Category Field */}
-                <div className="w-full sm:w-1/2">
-                  <label
-                    className="mb-3 block text-sm font-medium text-black dark:text-white"
-                    htmlFor="category"
-                  >
-                    Danh Mục
-                  </label>
-                  <input
-                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                    type="text"
-                    id="category"
-                    value={course.categoryName}
-                    readOnly
-                  />
-                </div>
-
-                {/* Active Field */}
-                <div className="w-full sm:w-1/2">
-                  <label
-                    className="mb-3 block text-sm font-medium text-black dark:text-white"
-                    htmlFor="active"
-                  >
-                    Đang Kích Hoạt
-                  </label>
-                  <input
-                    className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                    type="text"
-                    id="active"
-                    value={course.active ? 'Có' : 'Không'}
-                    readOnly
-                  />
-                </div>
-
-                {/* Schedule Field */}
-                <div className="w-full">
-                  <label
-                    className="mb-3 block text-sm font-medium text-black dark:text-white"
-                    htmlFor="schedule"
-                  >
-                    Lịch Học
-                  </label>
-                  <ul className="list-disc pl-5">
-                    {course.schedule.map((slot, index) => (
-                      <li
-                        key={index}
-                        className="text-sm font-medium text-black dark:text-white"
-                      >
-                        <strong>
-                          {dayOfWeekMap[slot.dayOfWeek] || slot.dayOfWeek}:
-                        </strong>{' '}
-                        {slot.start} - {slot.end}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </form>
+              <div className="flex-[5] overflow-x-auto">
+                <label
+                  className="mb-3 block text-sm font-medium text-black dark:text-white"
+                  htmlFor="name"
+                >
+                  Tên Lớp Học
+                </label>
+                <input
+                  className="w-full min-w-[300px] rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  type="text"
+                  id="name"
+                  value={course.name}
+                  onChange={handleInputChange} // Added onChange handler
+                  readOnly={!isAdmin}
+                />
+              </div>
             </div>
-          </div>
+
+            {/* Mô Tả Field */}
+            <div className="w-full">
+              <label
+                className="mb-3 block text-sm font-medium text-black dark:text-white"
+                htmlFor="description"
+              >
+                Mô Tả
+              </label>
+              <textarea
+                className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                id="description"
+                value={course.description}
+                onChange={handleInputChange} // Added onChange handler
+                rows={4}
+                readOnly={!isAdmin}
+              />
+            </div>
+
+            {/* Price, Start Date, Room, and Owner Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  className="mb-3 block text-sm font-medium text-black dark:text-white"
+                  htmlFor="price"
+                >
+                  Giá
+                </label>
+                <input
+                  className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  type="text"
+                  id="price"
+                  value={formatPrice(course.price)}
+                  onChange={handleInputChange} // Added onChange handler
+                  readOnly={!isAdmin}
+                />
+              </div>
+
+              <div>
+                <label
+                  className="mb-3 block text-sm font-medium text-black dark:text-white"
+                  htmlFor="startDate"
+                >
+                  Ngày Bắt Đầu
+                </label>
+                <input
+                  className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  type="text"
+                  id="startDate"
+                  value={formatDate(course.startDate)}
+                  onChange={handleInputChange} // Added onChange handler
+                  readOnly={!isAdmin}
+                />
+              </div>
+            </div>
+
+            {/* Room and Owner Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  className="mb-3 block text-sm font-medium text-black dark:text-white"
+                  htmlFor="room"
+                >
+                  Phòng
+                </label>
+                <input
+                  className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  type="text"
+                  id="room"
+                  value={course.room}
+                  onChange={handleInputChange} // Added onChange handler
+                  readOnly={!isAdmin}
+                />
+              </div>
+
+              <div>
+                <label
+                  className="mb-3 block text-sm font-medium text-black dark:text-white"
+                  htmlFor="owner"
+                >
+                  Giảng Viên
+                </label>
+                <input
+                  className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  type="text"
+                  id="owner"
+                  value={selectedOwner?.fullName || 'Chọn người'}
+                  onClick={() => setShowOwnerPopup(true)} // Show popup on click
+                  readOnly
+                />
+              </div>
+            </div>
+
+            {/* Schedule Field */}
+            <div className="mb-5.5">
+              <label
+                className="mb-3 block text-sm font-medium text-black dark:text-white"
+                htmlFor="schedule"
+              >
+                Lịch học
+              </label>
+              {schedule.map((item, index) => (
+                <div key={index} className="mb-4 flex gap-4 items-center">
+                  <div className="w-1/3">
+                    <select
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      value={item.dayOfWeek}
+                      onChange={(e) =>
+                        handleScheduleChange(index, 'dayOfWeek', e.target.value)
+                      }
+                      disabled={!isAdmin}
+                    >
+                      <option value="">Chọn ngày trong tuần</option>
+                      {daysOfWeek.map((day) => (
+                        <option key={day.value} value={day.value}>
+                          {day.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="w-1/3">
+                    <input
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      type="time"
+                      placeholder="Giờ bắt đầu"
+                      value={item.start}
+                      onChange={(e) =>
+                        handleScheduleChange(index, 'start', e.target.value)
+                      }
+                      disabled={!isAdmin}
+                    />
+                  </div>
+                  <div className="w-1/3">
+                    <input
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      type="time"
+                      placeholder="Giờ kết thúc"
+                      value={item.end}
+                      onChange={(e) =>
+                        handleScheduleChange(index, 'end', e.target.value)
+                      }
+                      disabled={!isAdmin}
+                    />
+                  </div>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="text-red-600 ml-2"
+                      onClick={() => handleRemoveSchedule(index)}
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+              ))}
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="rounded bg-blue-500 py-2 px-4 text-white hover:bg-blue-600"
+                  onClick={handleAddSchedule}
+                >
+                  Thêm lịch
+                </button>
+              )}
+            </div>
+
+            {/* Save Button */}
+            {isAdmin && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="rounded bg-green-500 py-2 px-4 text-white hover:bg-green-600"
+                  onClick={handleSave}
+                >
+                  Lưu
+                </button>
+              </div>
+            )}
+          </form>
         </div>
       </div>
+
+      {/* Show Owner Selector Popup */}
+      {showOwnerPopup && (
+        <OwnerSelectorPopup
+          onSelect={handleOwnerSelect}
+          onClose={() => setShowOwnerPopup(false)}
+        />
+      )}
+
       <ToastContainer />
     </div>
   );

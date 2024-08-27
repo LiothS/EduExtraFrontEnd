@@ -46,7 +46,10 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
           },
         );
         if (!response.ok) {
-          throw new Error('Không thể tải hợp đồng');
+          const errorData = await response.json();
+          // Display the error message from the response
+          toast.error(errorData.message || 'An unknown error occurred');
+          return;
         }
         const contractsData: ContractsResponse = await response.json();
         setContracts(contractsData.content);

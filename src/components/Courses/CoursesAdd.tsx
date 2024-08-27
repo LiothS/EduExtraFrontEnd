@@ -56,7 +56,10 @@ const AddCourse: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch categories');
+          const errorData = await response.json();
+          // Display the error message from the response
+          toast.error(errorData.message || 'An unknown error occurred');
+          return;
         }
 
         const data = await response.json();

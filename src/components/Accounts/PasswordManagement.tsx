@@ -51,7 +51,10 @@ const PasswordManagement: React.FC<PasswordManagementProps> = ({
       );
 
       if (!response.ok) {
-        throw new Error('Failed to change password');
+        const errorData = await response.json();
+        // Display the error message from the response
+        toast.error(errorData.message || 'An unknown error occurred');
+        return;
       }
 
       toast.success('Đổi mật khẩu thành công');

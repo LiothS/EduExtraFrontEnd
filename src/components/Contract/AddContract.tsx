@@ -29,7 +29,10 @@ const AddContract: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch user information');
+          const errorData = await response.json();
+          // Display the error message from the response
+          toast.error(errorData.message || 'An unknown error occurred');
+          return;
         }
 
         const userResponse = await response.json();

@@ -7,6 +7,7 @@ import { toast, ToastContainer } from 'react-toastify'; // For notifications
 import CourseInfo from './CourseInfo';
 import StudentList from './StudentList';
 import CourseLinks from './CourseLink';
+import CourseContract from './CourseContract';
 
 const CourseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -116,7 +117,9 @@ const CourseDetail: React.FC = () => {
             )}
 
             {activeTab === 'studentList' && <StudentList />}
-            {activeTab === 'courseLinks' && <CourseLinks />}
+            {activeTab === 'courseLinks' && (
+              <CourseContract courseUserId={course?.userId || 0} />
+            )}
           </div>
         </div>
       </div>

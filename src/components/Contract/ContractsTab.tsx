@@ -30,7 +30,7 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
     return user.roles.some((role) => role.roleName === roleName);
   };
 
-  const isManager = hasRole(globalUser, 'MANAGER');
+  const isManager = globalUser && hasRole(globalUser, 'MANAGER');
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -47,7 +47,6 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
         );
         if (!response.ok) {
           const errorData = await response.json();
-          // Display the error message from the response
           toast.error(errorData.message || 'An unknown error occurred');
           return;
         }
@@ -97,7 +96,7 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
   };
 
   const handleAddContract = () => {
-    navigate(`/add-contract/${userId}`); // Pass the userId as a parameter
+    navigate(`/add-contract/${userId}`);
   };
 
   const handleDeleteClick = (contractId: number) => {
@@ -118,7 +117,6 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
         },
       );
       if (response.ok) {
-        // Instead of removing, mark as terminated
         setContracts((prevContracts) =>
           prevContracts.map((contract) =>
             contract.id === deleteContractId
@@ -160,6 +158,7 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
             <table className="min-w-full bg-white">
               <thead>
                 <tr className="text-left border-b">
+                  <th className="py-3 px-4">Mã</th>
                   <th className="py-3 px-4">Loại hợp đồng</th>
                   <th className="py-3 px-4">Loại thu nhập</th>
                   <th className="py-3 px-4">Ngày bắt đầu</th>
@@ -176,6 +175,7 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
                     }`}
                     onClick={() => handleContractClick(contract)}
                   >
+                    <td className="py-3 px-4">HD-{contract.id}</td>
                     <td className="py-3 px-4">
                       {contract.contractType === 'LABOR'
                         ? 'Hợp đồng lao động'
@@ -253,7 +253,6 @@ const ContractsTab: React.FC<ContractsTabProps> = ({ userId }) => {
       )}
 
       {/* Floating Action Button */}
-
       {isManager && (
         <button
           onClick={handleAddContract}

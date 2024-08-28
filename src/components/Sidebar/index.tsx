@@ -99,7 +99,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           {/* <!-- Menu Group --> */}
           <div>
             <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-              MENU
+              QUẢN TRỊ
             </h3>
             <NavLink
               to="/tables"
@@ -129,6 +129,56 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             >
               <FaList className="text-xl" />
               Danh Mục
+            </NavLink>
+          </div>
+
+          <div>
+            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
+              CÁ NHÂN
+            </h3>
+            <NavLink
+              to="/tables"
+              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                pathname.includes('tables') && 'bg-graydark dark:bg-meta-4'
+              }`}
+            >
+              <FaTable className="text-xl" />
+              Lớp học của tôi
+            </NavLink>
+
+            <NavLink
+              to="/courses"
+              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                pathname.includes('courses') && 'bg-graydark dark:bg-meta-4'
+              }`}
+            >
+              <FaBook className="text-xl" />
+              Thông tin cá nhân
+            </NavLink>
+          </div>
+
+          <div>
+            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
+              TÀI CHÍNH
+            </h3>
+            <NavLink
+              to="/tables"
+              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                pathname.includes('tables') && 'bg-graydark dark:bg-meta-4'
+              }`}
+            >
+              <FaTable className="text-xl" />
+              Thống kê
+            </NavLink>
+
+            <NavLink
+              to="/courses"
+              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                pathname.includes('courses') && 'bg-graydark dark:bg-meta-4'
+              }`}
+            >
+              <FaBook className="text-xl" />
+              Bảng lương
             </NavLink>
           </div>
 

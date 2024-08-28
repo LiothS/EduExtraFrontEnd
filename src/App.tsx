@@ -69,7 +69,7 @@ function App() {
               index
               element={
                 <>
-                  <PageTitle title="eCommerce Dashboard | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                  <PageTitle title="EFE| Trung tâm quản lý" />
                   <Tables />
                 </>
               }
@@ -114,7 +114,7 @@ function App() {
               path="/tables"
               element={
                 <>
-                  <PageTitle title="Tables | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                  <PageTitle title="EFE | Trung tâm quản lý" />
                   <Tables />
                 </>
               }

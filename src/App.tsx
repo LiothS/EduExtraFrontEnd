@@ -24,6 +24,7 @@ import AddContract from './components/Contract/AddContract';
 import CoursesTable from './components/Tables/CoursesTable';
 import CourseAddPage from './components/Courses/CoursesAdd';
 import CourseDetail from './components/Courses/CourseDetail';
+import CategoryList from './components/Tables/CategoryTable';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -53,6 +54,7 @@ function App() {
                 </>
               }
             />
+            <Route path="/categories" element={<CategoryList />} />
             <Route path="/course-detail/:id" element={<CourseDetail />} />
             <Route path="/contract-detail/:id" element={<ContractDetail />} />
             <Route path="/course-add" element={<CourseAddPage />} />

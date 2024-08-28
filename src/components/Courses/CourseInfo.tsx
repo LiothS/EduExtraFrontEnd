@@ -115,12 +115,108 @@ const CourseInfo: React.FC<CourseInfoProps> = ({ courseId }) => {
     setSchedule((prevSchedule) => prevSchedule.filter((_, i) => i !== index));
   };
 
+  const validateSchedule = () => {
+    const errors: string[] = [];
+    const timeRangeStart = new Date('1970-01-01T07:00:00');
+    const timeRangeEnd = new Date('1970-01-01T22:00:00');
+
+    // Check if end time is after start time for each schedule
+    schedule.forEach((item) => {
+      const start = new Date(`1970-01-01T${item.start}:00`);
+      const end = new Date(`1970-01-01T${item.end}:00`);
+
+      // Check for start and end time within allowed range
+      if (start < timeRangeStart || end > timeRangeEnd) {
+        errors.push(
+          `Giờ học phải trong khoảng từ 07:00 đến 22:00 vào ngày ${
+            dayOfWeekMap[item.dayOfWeek]
+          }`,
+        );
+      }
+
+      if (start >= end) {
+        errors.push(
+          `Thời gian kết thúc phải sau thời gian bắt đầu vào ngày ${
+            dayOfWeekMap[item.dayOfWeek]
+          }`,
+        );
+      }
+    });
+
+    // Check for overlapping schedules
+    const scheduleByDay = schedule.reduce(
+      (acc, item) => {
+        if (!acc[item.dayOfWeek]) {
+          acc[item.dayOfWeek] = [];
+        }
+        acc[item.dayOfWeek].push({ start: item.start, end: item.end });
+        return acc;
+      },
+      {} as { [key: string]: { start: string; end: string }[] },
+    );
+
+    Object.keys(scheduleByDay).forEach((day) => {
+      const times = scheduleByDay[day];
+      times.sort((a, b) => a.start.localeCompare(b.start)); // Sort by start time
+
+      for (let i = 0; i < times.length - 1; i++) {
+        const currentEnd = new Date(`1970-01-01T${times[i].end}:00`);
+        const nextStart = new Date(`1970-01-01T${times[i + 1].start}:00`);
+        if (currentEnd > nextStart) {
+          errors.push(`Lịch học vào ngày ${dayOfWeekMap[day]} bị trùng lặp.`);
+        }
+      }
+    });
+
+    if (errors.length > 0) {
+      errors.forEach((error) => toast.error(error, { autoClose: 5000 }));
+      return false;
+    }
+    return true;
+  };
+
+  // const checkForOverlaps = (
+  //   schedules: { dayOfWeek: string; start: string; end: string }[],
+  // ) => {
+  //   const groupedSchedules = schedules.reduce(
+  //     (acc, sched) => {
+  //       if (!acc[sched.dayOfWeek]) acc[sched.dayOfWeek] = [];
+  //       acc[sched.dayOfWeek].push({ start: sched.start, end: sched.end });
+  //       return acc;
+  //     },
+  //     {} as Record<string, { start: string; end: string }[]>,
+  //   );
+
+  //   for (const day in groupedSchedules) {
+  //     const daySchedules = groupedSchedules[day];
+  //     for (let i = 0; i < daySchedules.length; i++) {
+  //       for (let j = i + 1; j < daySchedules.length; j++) {
+  //         const a = daySchedules[i];
+  //         const b = daySchedules[j];
+  //         if (a.start < b.end && b.start < a.end) {
+  //           return true; // Overlap detected
+  //         }
+  //       }
+  //     }
+  //   }
+  //   return false; // No overlaps
+  // };
+
   const handleSave = async () => {
     if (!course) {
       toast.error('Không có gì để lưu');
       return;
     }
 
+    if (!validateSchedule()) {
+      return; // Exit if validation fails
+    }
+    // if (checkForOverlaps(schedule)) {
+    //   toast.error('Thời gian bị trùng', {
+    //     autoClose: 5000,
+    //   });
+    //   return;
+    // }
     try {
       const response = await fetch(apiEndpoint, {
         method: 'PUT',

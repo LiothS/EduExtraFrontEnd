@@ -101,6 +101,30 @@ const AddCourse: React.FC = () => {
     setOwnerFullName(fullName);
     setShowOwnerPopup(false);
   };
+  const isValidTime = (time: string) => {
+    const [hours] = time.split(':').map(Number);
+    return hours >= 7 && hours <= 22;
+  };
+
+  const validateSchedule = (
+    schedules: { dayOfWeek: string; start: string; end: string }[],
+  ) => {
+    for (const { start, end } of schedules) {
+      if (!start || !end) {
+        return 'Nhập giờ bắt đầu và kết thúc của các buổi học';
+      }
+
+      if (end <= start) {
+        return 'Giờ kết thúc phải sau thời gian bắt đầu';
+      }
+
+      if (!isValidTime(start) || !isValidTime(end)) {
+        return 'Giờ học phải trong khoảng từ 7:00 đến 22:00';
+      }
+    }
+
+    return null; // No validation errors
+  };
 
   const checkForOverlaps = (
     schedules: { dayOfWeek: string; start: string; end: string }[],
@@ -139,8 +163,16 @@ const AddCourse: React.FC = () => {
       return;
     }
 
+    const validationError = validateSchedule(schedule);
+    if (validationError) {
+      toast.error(validationError, {
+        autoClose: 3000,
+      });
+      return;
+    }
+
     if (checkForOverlaps(schedule)) {
-      toast.error('Schedule times overlap. Please correct the times.', {
+      toast.error('Thời gian bị trùng', {
         autoClose: 3000,
       });
       return;

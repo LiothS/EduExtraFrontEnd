@@ -102,3 +102,23 @@ export interface Category {
   createdBy?: string;
   updatedBy?: string;
 }
+
+// types/common.ts
+
+export interface Student {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  relativePhone: string;
+  address: string;
+  nickname: string;
+  prefix: string;
+  birthday: string; // Date in ISO format
+  active: boolean;
+  joinTime: string; // Date in ISO format
+  createdDate: string; // Date in ISO format
+  updatedDate: string | null; // Date in ISO format or null
+  createdBy: string;
+  updatedBy: string | null; // Nullable string
+}

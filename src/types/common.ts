@@ -113,7 +113,7 @@ export interface Student {
   relativePhone: string;
   address: string;
   nickname: string;
-  prefix: string;
+  code: string;
   birthday: string; // Date in ISO format
   active: boolean;
   joinTime: string; // Date in ISO format

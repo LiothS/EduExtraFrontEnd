@@ -104,7 +104,7 @@ const StudentList: React.FC = () => {
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="py-6 px-4 md:px-6 xl:px-7.5">
           <h4 className="text-xl font-semibold text-black dark:text-white">
-            Danh sách sinh viên
+            Danh sách học viên
           </h4>
 
           {/* Search bar and filter dropdown */}
@@ -115,6 +115,7 @@ const StudentList: React.FC = () => {
               className="border border-stroke rounded-md py-2 px-4 dark:bg-boxdark dark:border-strokedark"
             >
               <option value="fullName">Họ tên</option>
+              <option value="code">Mã học viên</option>
               <option value="email">Email</option>
               <option value="phone">Số điện thoại</option>
               <option value="address">Địa chỉ</option>
@@ -141,7 +142,7 @@ const StudentList: React.FC = () => {
                 onClick={handleAddStudent}
                 className="bg-primary text-white rounded-md py-2 px-4 hover:bg-primary-dark focus:outline-none"
               >
-                Thêm sinh viên
+                Thêm học viên
               </button>
             )}
           </div>
@@ -154,7 +155,7 @@ const StudentList: React.FC = () => {
           >
             {/* Header Row */}
             <div className="flex items-center px-4 py-2">
-              <p className="font-medium truncate">Mã học sinh</p>
+              <p className="font-medium truncate">Mã học viên</p>
             </div>
             <div className="flex items-center px-4 py-2">
               <p className="font-medium truncate">Họ Tên</p>
@@ -180,8 +181,7 @@ const StudentList: React.FC = () => {
               {/* Student Details */}
               <div className="flex items-center px-4 py-2">
                 <p className="text-sm text-black dark:text-white truncate">
-                  {student.prefix}
-                  {student.id}
+                  {student.code}
                 </p>
               </div>
               <div className="flex items-center px-4 py-2">

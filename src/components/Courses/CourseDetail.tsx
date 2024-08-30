@@ -5,9 +5,10 @@ import { Course } from '../../types/common'; // Import Course type
 import { config } from '../../common/config'; // Assuming this has API configuration
 import { toast, ToastContainer } from 'react-toastify'; // For notifications
 import CourseInfo from './CourseInfo';
-import StudentList from './StudentList';
+import StudentList from './StudentCourseList';
 import CourseLinks from './CourseLink';
 import CourseContract from './CourseContract';
+import StudentCourseList from './StudentCourseList';
 
 const CourseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -72,7 +73,7 @@ const CourseDetail: React.FC = () => {
 
   return (
     <>
-      <div className="mx-auto max-w-4xl px-4">
+      <div className="w-full px-4 mx-auto">
         <Breadcrumb pageName="Lớp học" />
 
         <div className="bg-white shadow-md rounded-lg p-4">
@@ -116,7 +117,9 @@ const CourseDetail: React.FC = () => {
               <CourseInfo courseId={course.id} />
             )}
 
-            {activeTab === 'studentList' && <StudentList />}
+            {activeTab === 'studentList' && (
+              <StudentCourseList courseId={course?.id || 0} />
+            )}
             {activeTab === 'courseLinks' && (
               <CourseContract courseUserId={course?.userId || 0} />
             )}

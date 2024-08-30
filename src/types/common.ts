@@ -122,3 +122,13 @@ export interface Student {
   createdBy: string;
   updatedBy: string | null; // Nullable string
 }
+
+export interface StudentCourse {
+  studentId: number;
+  studentCode: string;
+  studentFullName: string;
+  studentPhone: string;
+  isPaid: boolean;
+  unpaidMonths: number;
+  remainingAmount: number;
+}

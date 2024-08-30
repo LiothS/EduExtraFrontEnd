@@ -26,6 +26,7 @@ import CourseAddPage from './components/Courses/CoursesAdd';
 import CourseDetail from './components/Courses/CourseDetail';
 import CategoryList from './components/Tables/CategoryTable';
 import StudentTable from './components/Tables/StudentTable';
+import AddStudent from './pages/Student/AddStudent';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -55,6 +56,7 @@ function App() {
                 </>
               }
             />
+            <Route path="/add-student" element={<AddStudent />} />
             <Route path="/categories" element={<CategoryList />} />
             <Route path="/students" element={<StudentTable />} />
             <Route path="/course-detail/:id" element={<CourseDetail />} />

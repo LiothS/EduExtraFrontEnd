@@ -1,8 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { FaTable, FaBook, FaList } from 'react-icons/fa'; // Import icons from react-icons
+import {
+  FaTable,
+  FaBook,
+  FaList,
+  FaUserEdit,
+  FaUserCog,
+  FaUserFriends,
+  FaUserGraduate,
+} from 'react-icons/fa'; // Import icons from react-icons
 import SidebarLinkGroup from './SidebarLinkGroup';
 import Logo from '../../images/logo/logo.svg';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/UserStore';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -15,6 +25,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
   const trigger = useRef<any>(null);
   const sidebar = useRef<any>(null);
+  const globalUser = useSelector((state: RootState) => state.user.user);
+  const isAdmin =
+    globalUser && globalUser.roles.some((role) => role.roleName === 'ADMIN');
 
   const storedSidebarExpanded = localStorage.getItem('sidebar-expanded');
   const [sidebarExpanded, setSidebarExpanded] = useState(
@@ -97,59 +110,62 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         {/* <!-- Sidebar Menu --> */}
         <nav className="mt-5 py-4 px-4 lg:mt-9 lg:px-6">
           {/* <!-- Menu Group --> */}
+          {isAdmin && (
+            <div>
+              <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
+                QUẢN TRỊ
+              </h3>
+              <NavLink
+                to="/tables"
+                className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                  pathname.includes('tables') && 'bg-graydark dark:bg-meta-4'
+                }`}
+              >
+                <FaUserFriends className="text-xl" />
+                Nhân Viên
+              </NavLink>
+
+              <NavLink
+                to="/courses"
+                className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                  pathname.includes('courses') && 'bg-graydark dark:bg-meta-4'
+                }`}
+              >
+                <FaBook className="text-xl" />
+                Lớp Học
+              </NavLink>
+
+              <NavLink
+                to="/students"
+                className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                  pathname.includes('students') && 'bg-graydark dark:bg-meta-4'
+                }`}
+              >
+                <FaUserGraduate className="text-xl" />
+                Học sinh
+              </NavLink>
+
+              <NavLink
+                to="/categories"
+                className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                  pathname.includes('categories') &&
+                  'bg-graydark dark:bg-meta-4'
+                }`}
+              >
+                <FaList className="text-xl" />
+                Danh Mục
+              </NavLink>
+            </div>
+          )}
+
           <div>
-            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-              QUẢN TRỊ
-            </h3>
-            <NavLink
-              to="/tables"
-              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('tables') && 'bg-graydark dark:bg-meta-4'
-              }`}
-            >
-              <FaTable className="text-xl" />
-              Nhân Viên
-            </NavLink>
-
-            <NavLink
-              to="/courses"
-              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('courses') && 'bg-graydark dark:bg-meta-4'
-              }`}
-            >
-              <FaBook className="text-xl" />
-              Khoá Học
-            </NavLink>
-
-            <NavLink
-              to="/students"
-              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('categories') && 'bg-graydark dark:bg-meta-4'
-              }`}
-            >
-              <FaList className="text-xl" />
-              Học sinh
-            </NavLink>
-
-            <NavLink
-              to="/categories"
-              className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('categories') && 'bg-graydark dark:bg-meta-4'
-              }`}
-            >
-              <FaList className="text-xl" />
-              Danh Mục
-            </NavLink>
-          </div>
-
-          <div>
-            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
+            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2 mt-4">
               CÁ NHÂN
             </h3>
             <NavLink
-              to="/tables"
+              to="/my-courses"
               className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('tables') && 'bg-graydark dark:bg-meta-4'
+                pathname.includes('my-teaching') && 'bg-graydark dark:bg-meta-4'
               }`}
             >
               <FaTable className="text-xl" />
@@ -157,9 +173,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             </NavLink>
 
             <NavLink
-              to="/courses"
+              to={`/user-detail/${globalUser?.id}`}
               className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('courses') && 'bg-graydark dark:bg-meta-4'
+                pathname.includes('my-info') && 'bg-graydark dark:bg-meta-4'
               }`}
             >
               <FaBook className="text-xl" />
@@ -168,13 +184,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           </div>
 
           <div>
-            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
+            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2 mt-4">
               TÀI CHÍNH
             </h3>
             <NavLink
-              to="/tables"
+              to="/my-info"
               className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('tables') && 'bg-graydark dark:bg-meta-4'
+                pathname.includes('/report') && 'bg-graydark dark:bg-meta-4'
               }`}
             >
               <FaTable className="text-xl" />
@@ -182,9 +198,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             </NavLink>
 
             <NavLink
-              to="/courses"
+              to="/salaries"
               className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                pathname.includes('courses') && 'bg-graydark dark:bg-meta-4'
+                pathname.includes('/salaries') && 'bg-graydark dark:bg-meta-4'
               }`}
             >
               <FaBook className="text-xl" />

@@ -28,6 +28,8 @@ import CategoryList from './components/Tables/CategoryTable';
 import StudentTable from './components/Tables/StudentTable';
 import AddStudent from './pages/Student/AddStudent';
 import StudentPayment from './components/Courses/StudentPayment';
+import MyCourseTable from './components/Tables/MyCourseTable';
+import StudentDetail from './components/Student/StudentDetail';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -58,6 +60,8 @@ function App() {
               }
             />
             <Route path="/student-payment" element={<StudentPayment />} />
+            <Route path="/student-detail/:id" element={<StudentDetail />} />
+            <Route path="/my-courses" element={<MyCourseTable />} />
             <Route path="/add-student" element={<AddStudent />} />
             <Route path="/categories" element={<CategoryList />} />
             <Route path="/students" element={<StudentTable />} />

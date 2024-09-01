@@ -242,7 +242,7 @@ const CoursePage: React.FC = () => {
           <FaChevronLeft />
         </button>
         <span className="font-medium truncate">
-          Trang {currentPage} trên {totalPages}
+          Trang {currentPage}/{totalPages}
         </span>
         <button
           onClick={handleNextPage}

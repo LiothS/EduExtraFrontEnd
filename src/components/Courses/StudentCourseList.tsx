@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { config } from '../../common/config';
 import { StudentCourse } from '../../types/common';
 import StudentSelectionPopup from './StudentCourseSelectPopup';
-import { FaTrashAlt } from 'react-icons/fa'; // Import delete icon
-import { ToastContainer, toast } from 'react-toastify'; // Import toast components
-import 'react-toastify/dist/ReactToastify.css'; // Import toast CSS
+import { FaChevronLeft, FaChevronRight, FaTrashAlt } from 'react-icons/fa';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import StudentPayment from './StudentPayment';
 
 interface StudentListProps {
   courseId: number;
@@ -16,17 +17,21 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalElements, setTotalElements] = useState<number>(0);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{
     open: boolean;
     studentId?: number;
   }>({ open: false });
+  const [selectedStudent, setSelectedStudent] = useState<StudentCourse | null>(
+    null,
+  );
 
   const fetchStudents = async (pageNumber: number) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${config.apiBaseUrl}/courses/${courseId}/students?page=${pageNumber}&size=20&sort=fullName,asc`,
+        `${config.apiBaseUrl}/courses/${courseId}/students?page=${pageNumber}&size=10&sort=fullName,asc`,
         {
           method: 'GET',
           headers: {
@@ -38,7 +43,8 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
       if (!response.ok) throw new Error('Failed to fetch students');
       const data = await response.json();
       setStudents(data.content);
-      setTotalPages(data.totalPages || 1); // Ensure totalPages is correctly set
+      setTotalPages(data.totalPages || 1);
+      setTotalElements(data.totalElements || 0);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -69,7 +75,6 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
 
   const handleStudentSelect = (studentId: number, fullName: string) => {
     console.log(`Student selected: ID ${studentId}, Name ${fullName}`);
-    // Implement your logic here for the selected student
     handlePopupClose(); // Close popup after selection
   };
 
@@ -94,7 +99,7 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
         if (!response.ok) throw new Error('Failed to delete student');
         await response.json();
         fetchStudents(page); // Refresh the student list
-        toast.success('Xoá thành công'); // Show success toast
+        toast.success('Xoá thành công');
         setConfirmDelete({ open: false });
       } catch (err) {
         setError((err as Error).message);
@@ -110,19 +115,24 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
     setConfirmDelete({ open: false });
   };
 
+  const handlePayment = (student: StudentCourse) => {
+    setSelectedStudent(student);
+  };
+
+  const handlePaymentClose = () => {
+    setSelectedStudent(null);
+    fetchStudents(page); // Refetch the student list when payment modal is closed
+  };
+
   if (loading) return <div className="p-4 text-center">Loading...</div>;
   if (error)
     return <div className="p-4 text-center text-red-500">Error: {error}</div>;
-
-  function handlePayment(studentId: number): void {
-    throw new Error('Function not implemented.');
-  }
 
   return (
     <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       <div className="py-6 px-4 md:px-6 xl:px-7.5">
         <h4 className="text-xl font-semibold text-black dark:text-white">
-          Danh sách học sinh
+          Danh sách học sinh ({totalElements})
         </h4>
       </div>
 
@@ -149,16 +159,13 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
           </div>
           <div className="flex items-center px-4 py-2">
             <p className="font-medium text-black dark:text-white truncate">
-              Học Phí
+              Còn nợ
             </p>
           </div>
           <div className="flex items-center px-4 py-2">
             <p className="font-medium text-black dark:text-white truncate">
               Học phí
             </p>
-          </div>
-          <div className="flex items-center px-4 py-2">
-            <p className="font-medium text-black dark:text-white truncate"></p>
           </div>
         </div>
 
@@ -185,16 +192,22 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
             </div>
             <div className="flex items-center px-4 py-2 truncate">
               <p className="text-sm text-black dark:text-white truncate">
-                {student.isPaid ? 'Đã đóng' : 'Chưa đóng'}
+                {student.remainingAmount
+                  ? `${student.remainingAmount.toLocaleString()} VND`
+                  : '0 VND'}
               </p>
             </div>
-            <div className="flex items-center px-4 py-2">
-              {student.isPaid ? (
-                <p className="text-sm text-black dark:text-white">Đã thu</p>
+            <div className="flex items-center px-4 py-2 truncate">
+              {student.isNew && student.remainingAmount === 0 ? (
+                <p className="text-sm text-black dark:text-white truncate">
+                  Học sinh mới
+                </p>
+              ) : student.isPaid ? (
+                <p className="text-sm text-black dark:text-white">Đã đóng</p>
               ) : (
                 <button
                   className="bg-red-500 text-white px-4 py-2 rounded-md mr-2"
-                  onClick={() => handlePayment(student.studentId)}
+                  onClick={() => handlePayment(student)}
                 >
                   Thu
                 </button>
@@ -212,20 +225,23 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
         ))}
       </div>
 
-      <div className="flex justify-center my-4">
+      <div className="my-4 px-4 flex justify-center items-center space-x-4">
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded-md mr-2 disabled:bg-gray-400"
+          className="rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed"
           onClick={handlePreviousPage}
           disabled={page === 1}
         >
-          Previous
+          <FaChevronLeft />
         </button>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Trang {page}/{totalPages}
+        </p>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded-md ml-2 disabled:bg-gray-400"
+          className="rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed"
           onClick={handleNextPage}
           disabled={page >= totalPages}
         >
-          Next
+          <FaChevronRight />
         </button>
       </div>
 
@@ -271,6 +287,15 @@ const StudentCourseList: React.FC<StudentListProps> = ({ courseId }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Student Payment Modal */}
+      {selectedStudent && (
+        <StudentPayment
+          student={selectedStudent}
+          courseId={courseId}
+          onClose={handlePaymentClose}
+        />
       )}
 
       {/* Toast Container */}

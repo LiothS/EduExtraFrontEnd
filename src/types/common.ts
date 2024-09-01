@@ -131,4 +131,5 @@ export interface StudentCourse {
   isPaid: boolean;
   unpaidMonths: number;
   remainingAmount: number;
+  isNew: boolean;
 }

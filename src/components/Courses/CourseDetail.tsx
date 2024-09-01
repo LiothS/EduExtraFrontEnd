@@ -5,10 +5,9 @@ import { Course } from '../../types/common'; // Import Course type
 import { config } from '../../common/config'; // Assuming this has API configuration
 import { toast, ToastContainer } from 'react-toastify'; // For notifications
 import CourseInfo from './CourseInfo';
-import StudentList from './StudentCourseList';
-import CourseLinks from './CourseLink';
-import CourseContract from './CourseContract';
 import StudentCourseList from './StudentCourseList';
+import CourseContract from './CourseContract';
+import CourseFinance from './CourseFinance';
 
 const CourseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -100,6 +99,16 @@ const CourseDetail: React.FC = () => {
               Danh sách học sinh
             </button>
             <button
+              onClick={() => setActiveTab('financials')}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'financials'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-gray-600'
+              } focus:outline-none`}
+            >
+              Tài chính
+            </button>
+            <button
               onClick={() => setActiveTab('courseLinks')}
               className={`py-2 px-4 text-sm font-medium ${
                 activeTab === 'courseLinks'
@@ -120,6 +129,11 @@ const CourseDetail: React.FC = () => {
             {activeTab === 'studentList' && (
               <StudentCourseList courseId={course?.id || 0} />
             )}
+
+            {activeTab === 'financials' && course?.id !== undefined && (
+              <CourseFinance courseId={course.id} />
+            )}
+
             {activeTab === 'courseLinks' && (
               <CourseContract courseUserId={course?.userId || 0} />
             )}

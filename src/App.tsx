@@ -27,6 +27,7 @@ import CourseDetail from './components/Courses/CourseDetail';
 import CategoryList from './components/Tables/CategoryTable';
 import StudentTable from './components/Tables/StudentTable';
 import AddStudent from './pages/Student/AddStudent';
+import StudentPayment from './components/Courses/StudentPayment';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -56,6 +57,7 @@ function App() {
                 </>
               }
             />
+            <Route path="/student-payment" element={<StudentPayment />} />
             <Route path="/add-student" element={<AddStudent />} />
             <Route path="/categories" element={<CategoryList />} />
             <Route path="/students" element={<StudentTable />} />

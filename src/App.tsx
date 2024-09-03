@@ -61,7 +61,7 @@ function App() {
             />
             <Route path="/student-payment" element={<StudentPayment />} />
             <Route path="/student-detail/:id" element={<StudentDetail />} />
-            <Route path="/my-courses" element={<MyCourseTable />} />
+            <Route path="/my-classes" element={<MyCourseTable />} />
             <Route path="/add-student" element={<AddStudent />} />
             <Route path="/categories" element={<CategoryList />} />
             <Route path="/students" element={<StudentTable />} />

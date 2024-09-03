@@ -12,6 +12,7 @@ import ContractsTab from '../../components/Contract/ContractsTab';
 import AccountManagement from '../../components/Accounts/AccountManagement';
 import PasswordManagement from '../../components/Accounts/PasswordManagement';
 import BankAccountsManagement from '../../components/Accounts/BankAccountsManagement';
+import IncomeTab from '../../components/Income/IncomeTab';
 
 const accountContent = <div>Account Content</div>;
 
@@ -249,6 +250,18 @@ const UserDetail: React.FC = () => {
                 } focus:outline-none`}
               >
                 Tài khoản
+              </button>
+            }
+            {
+              <button
+                onClick={() => setActiveTab('income')}
+                className={`py-2 px-4 text-sm font-medium ${
+                  activeTab === 'income'
+                    ? 'border-b-2 border-primary text-primary'
+                    : 'text-gray-600'
+                } focus:outline-none`}
+              >
+                Thu nhập
               </button>
             }
             {
@@ -623,6 +636,7 @@ const UserDetail: React.FC = () => {
             {activeTab === 'bank' && apiUser && (
               <BankAccountsManagement userId={apiUser.id} />
             )}
+            {activeTab === 'income' && <IncomeTab userId={Number(id)} />}
           </div>
         </div>
       </div>
